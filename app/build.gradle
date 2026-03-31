@@ -3,9 +3,6 @@ plugins {
     id 'kotlin-android'
     id 'kotlin-kapt'
     id 'kotlin-parcelize'
-    id 'com.google.gms.google-services'
-    id 'com.google.firebase.firebase-perf'
-    id 'com.google.firebase.crashlytics'
 }
 
 apply from: '../signing.gradle'
@@ -20,34 +17,26 @@ android {
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 241
-        versionName "2.4.8"
+        versionName "2.4.8-free"
 
-        // Define the apk naming convention
         applicationId "org.tvheadend.tvhclient"
         setProperty("archivesBaseName", "${applicationId}-${versionName}-${versionCode}")
 
-        // Set the default values for these build config fields
         buildConfigField "String", "DEVELOPER_EMAIL", "\"${appProperties['developerEmail']}\""
         buildConfigField "Integer", "BUILD_VERSION", "$versionCode"
 
-        // Include the build time and git commit hash in the crash reports
         def gitSha = 'git rev-parse --short HEAD'.execute([], project.rootDir).text.trim()
         def buildTime = new GregorianCalendar().format("yyyy.MM.dd HH:mm:ss")
         buildConfigField "String", "BUILD_TIME", "\"${buildTime}\""
         buildConfigField "String", "GIT_SHA", "\"${gitSha}\""
 
-        // The cast ID that the app shall use
+        // Cast ID kept for Chromecast support
         buildConfigField "String", "CAST_ID", "\"${appProperties['castId']}\""
 
-        // Support vector drawable and animated vector drawable on devices
-        // running platform versions lower than Android 5.0 (API level 21)
         vectorDrawables.useSupportLibrary = true
-
         multiDexEnabled true
 
         lintOptions {
-            // Do not check for lint errors to reduce the build time.
-            // Lint checks will be done manually before a release
             checkReleaseBuilds false
         }
 
@@ -70,7 +59,6 @@ android {
 
     buildTypes {
         release {
-            // Reduce the apk file size by enabling proguard
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             buildConfigField "Boolean", "OVERRIDE_UNLOCKED", "false"
         }
@@ -81,9 +69,7 @@ android {
 }
 
 dependencies {
-    // Dependency on local binaries
     implementation fileTree(include: ['*.jar'], dir: 'libs')
-    implementation 'com.android.billingclient:billing-ktx:6.1.0'
 
     def fragmentVersion = '1.4.0'
     def lifecycleVersion = '2.4.0'
@@ -104,13 +90,13 @@ dependencies {
     implementation "androidx.fragment:fragment-ktx:$fragmentVersion"
     debugImplementation "androidx.fragment:fragment-testing:$fragmentVersion"
 
-    // Misc stuff like logging, image loading, billing, casting
+    // UI & utilities
     implementation 'com.google.android.material:material:1.4.0'
     implementation "com.jakewharton.timber:timber:$timberVersion"
     implementation 'com.squareup.picasso:picasso:2.71828'
-    implementation 'com.android.billingclient:billing:6.1.0'
+
+    // Chromecast support
     implementation 'com.google.android.gms:play-services-cast-framework:21.0.0'
-    implementation 'com.google.android.datatransport:transport-backend-cct:3.1.1'
     implementation 'androidx.mediarouter:mediarouter:1.2.5'
 
     // Kotlin
@@ -126,40 +112,26 @@ dependencies {
     //noinspection GradleDependency
     implementation 'com.mikepenz:materialdrawer:7.0.0'
 
-    // Firebase Crash Reporting and Performance Monitoring
-    implementation 'com.google.firebase:firebase-analytics-ktx:19.0.1'
-    implementation 'com.google.firebase:firebase-crashlytics:18.2.1'
-    implementation 'com.google.firebase:firebase-perf:20.0.2'
-
     // Dependency injection
     implementation "com.google.dagger:dagger:$daggerVersion"
     kapt "com.google.dagger:dagger-compiler:$daggerVersion"
 
-    // Use multidex because the method count is over 64k
+    // Multidex
     implementation 'androidx.multidex:multidex:2.0.1'
 
-    // ----------------------------------------------------------------------------
-    // Required internal libraries for the application
+    // Internal ExoPlayer build
     def exoplayerVersion = '2.11.7'
-
     implementation "org.tvheadend.tvhclient.exoplayer:exoplayer-ui:$exoplayerVersion"
     implementation "org.tvheadend.tvhclient.exoplayer:exoplayer-core:$exoplayerVersion"
     implementation "org.tvheadend.tvhclient.exoplayer:exoplayer-dash:$exoplayerVersion"
     implementation "org.tvheadend.tvhclient.exoplayer:extension-ffmpeg:$exoplayerVersion"
 
-    //implementation "org.tvheadend.tvhclient.htsp:htsp:1.2.1"
-    //implementation "org.tvheadend.tvhclient.data:data:2.1.3"
     implementation project(':htsp')
     implementation project(':data')
 
-    // ----------------------------------------------------------------------------
-    // Define versions for testing dependencies
+    // Testing
     def junit_version = '4.13.2'
     def androidx_test_version = '1.4.0'
-
-    // Required dependencies for unit testing
     testImplementation "junit:junit:$junit_version"
     testImplementation "androidx.test:core:$androidx_test_version"
 }
-
-apply plugin: 'com.google.gms.google-services'
