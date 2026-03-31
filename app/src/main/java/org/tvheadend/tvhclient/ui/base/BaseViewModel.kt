@@ -5,16 +5,12 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.LifecycleObserver
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.asLiveData
 import androidx.preference.PreferenceManager
 import org.tvheadend.data.AppRepository
 import org.tvheadend.data.entity.Connection
 import org.tvheadend.tvhclient.MainApplication
-import org.tvheadend.tvhclient.MainRepository
-import org.tvheadend.tvhclient.MainRepository.Companion.UNLOCKER
 import org.tvheadend.tvhclient.service.ConnectionService
 import org.tvheadend.tvhclient.ui.common.NetworkStatus
 import org.tvheadend.tvhclient.ui.common.interfaces.NetworkStatusInterface
@@ -29,8 +25,6 @@ open class BaseViewModel(application: Application) : AndroidViewModel(applicatio
     @Inject
     lateinit var appRepository: AppRepository
 
-    private var mainRepository: MainRepository
-
     var sharedPreferences: SharedPreferences = PreferenceManager.getDefaultSharedPreferences(application.applicationContext)
 
     var startupCompleteLiveData = MutableLiveData<Event<Boolean>>()
@@ -39,32 +33,17 @@ open class BaseViewModel(application: Application) : AndroidViewModel(applicatio
     var connectionToServerAvailableLiveData = MutableLiveData<Boolean>()
         private set
 
-    /**
-     * Contains an intent with the snackbar message and other information.
-     * The value gets set by the {@link SnackbarMessageReceiver}
-     */
     var snackbarMessageLiveData = MutableLiveData<Event<Intent>>()
         private set
 
-    /**
-     * Contains the current network status.
-     * The value gets set by the {@link NetworkStatusReceiver}
-     */
     var networkStatusLiveData = MutableLiveData<Event<NetworkStatus>>()
         private set
 
     var connection: Connection
 
-    /**
-     * Contains the live data information that the application is unlocked or not
-     */
-    var isUnlockedLiveData: LiveData<Boolean>
-        private set
-
-    /**
-     * Contains the information that the application is unlocked or not
-     */
-    var isUnlocked = false
+    // Always unlocked — billing has been removed
+    val isUnlockedLiveData: LiveData<Boolean> = MutableLiveData(true)
+    var isUnlocked = true
 
     var htspVersion: Int
     var removeFragmentWhenSearchIsDone = false
@@ -75,26 +54,12 @@ open class BaseViewModel(application: Application) : AndroidViewModel(applicatio
     val isSearchActive: Boolean
         get() = !searchQueryLiveData.value.isNullOrEmpty()
 
-    val messages: LiveData<Int>
-        get() = mainRepository.messages.asLiveData()
-
-    val billingLifecycleObserver: LifecycleObserver
-        get() = mainRepository.billingLifecycleObserver
-
     init {
         inject()
         startupCompleteLiveData.value = Event(false)
-
-        mainRepository = (application as MainApplication).appContainer.mainRepository
-
-        Timber.d("Observing isUnlockedLiveData from main repository")
-        isUnlockedLiveData = mainRepository.isPurchased(UNLOCKER).asLiveData()
-
         connection = appRepository.connectionData.activeItem
         htspVersion = appRepository.serverStatusData.activeItem.htspVersion
-
         connectionToServerAvailableLiveData.value = false
-
         networkStatusLiveData.value = Event(NetworkStatus.NETWORK_UNKNOWN)
     }
 
