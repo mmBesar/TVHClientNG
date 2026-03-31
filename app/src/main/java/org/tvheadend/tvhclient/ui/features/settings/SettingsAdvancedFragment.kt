@@ -66,25 +66,22 @@ class SettingsAdvancedFragment : PreferenceFragmentCompat(), Preference.OnPrefer
         connectionTimeoutPreference = findPreference("connection_timeout")
         connectionTimeoutPreference?.onPreferenceChangeListener = this
 
-        settingsViewModel.isUnlockedLiveData.observe(viewLifecycleOwner) {
-            initPreferenceChangeListeners()
-        }
+        // All features are unlocked — enable notification preferences directly
+        initPreferenceChangeListeners()
     }
 
     private fun initPreferenceChangeListeners() {
         notificationsEnabledPreference?.also {
             it.onPreferenceClickListener = this
-            it.isEnabled = settingsViewModel.isUnlocked
+            it.isEnabled = true
         }
-
         notifyRunningRecordingCountEnabledPreference?.also {
             it.onPreferenceClickListener = this
-            it.isEnabled = settingsViewModel.isUnlocked
+            it.isEnabled = true
         }
-
         notifyLowStorageSpaceEnabledPreference?.also {
             it.onPreferenceClickListener = this
-            it.isEnabled = settingsViewModel.isUnlocked
+            it.isEnabled = true
         }
     }
 
@@ -128,24 +125,15 @@ class SettingsAdvancedFragment : PreferenceFragmentCompat(), Preference.OnPrefer
     }
 
     private fun handlePreferenceNotificationsSelected() {
-        if (!settingsViewModel.isUnlocked) {
-            context?.sendSnackbarMessage(R.string.feature_not_available_in_free_version)
-            notificationsEnabledPreference?.isChecked = false
-        }
+        // Always allowed — no paywall
     }
 
     private fun handlePreferenceNotifyRunningRecordingEnabledSelected() {
-        if (!settingsViewModel.isUnlocked) {
-            context?.sendSnackbarMessage(R.string.feature_not_available_in_free_version)
-            notifyRunningRecordingCountEnabledPreference?.isChecked = false
-        }
+        // Always allowed — no paywall
     }
 
     private fun handlePreferenceNotifyLowStorageSpaceSelected() {
-        if (!settingsViewModel.isUnlocked) {
-            context?.sendSnackbarMessage(R.string.feature_not_available_in_free_version)
-            notifyRunningRecordingCountEnabledPreference?.isChecked = false
-        }
+        // Always allowed — no paywall
     }
 
     private fun handlePreferenceClearDatabaseSelected() {
@@ -183,7 +171,6 @@ class SettingsAdvancedFragment : PreferenceFragmentCompat(), Preference.OnPrefer
     }
 
     private fun handlePreferenceSendLogFileSelected() {
-        // Get the list of available files in the log path
         context?.let {
             val logPath = File(it.cacheDir, "logs")
             val files = logPath.listFiles()
@@ -193,12 +180,10 @@ class SettingsAdvancedFragment : PreferenceFragmentCompat(), Preference.OnPrefer
                     positiveButton(android.R.string.ok) { dismiss() }
                 }
             } else {
-                // Fill the items for the dialog
                 val logfileList = ArrayList<String>()
                 for (i in files.indices) {
                     logfileList.add(files[i].name)
                 }
-                // Show the dialog with the list of log files
                 MaterialDialog(it).show {
                     title(R.string.select_log_file)
                     listItemsSingleChoice(items = logfileList, initialSelection = -1) { _, index, _ ->
@@ -225,23 +210,18 @@ class SettingsAdvancedFragment : PreferenceFragmentCompat(), Preference.OnPrefer
         }
 
         if (fileUri != null) {
-            // Create the intent with the email, some text and the log
-            // file attached. The user can select from a list of
-            // applications which he wants to use to send the mail
             val intent = Intent(Intent.ACTION_SEND)
             intent.putExtra(Intent.EXTRA_EMAIL, arrayOf(BuildConfig.DEVELOPER_EMAIL))
             intent.putExtra(Intent.EXTRA_SUBJECT, "TVHClient Logfile")
             intent.putExtra(Intent.EXTRA_TEXT, "Logfile was sent on $dateText")
             intent.putExtra(Intent.EXTRA_STREAM, fileUri)
             intent.type = "text/plain"
-
             startActivity(Intent.createChooser(intent, "Send Log File to developer"))
         }
     }
 
     override fun onPreferenceChange(preference: Preference?, newValue: Any?): Boolean {
         if (preference == null) return false
-
         Timber.d("Preference ${preference.key} changed, checking if it is valid")
         when (preference.key) {
             "connection_timeout" ->
@@ -276,17 +256,13 @@ class SettingsAdvancedFragment : PreferenceFragmentCompat(), Preference.OnPrefer
         Timber.d("Preference $key has changed")
         when (key) {
             "notify_running_recording_count_enabled" -> {
-                if (prefs != null) {
-                    if (!prefs.getBoolean(key, resources.getBoolean(R.bool.pref_default_notify_running_recording_count_enabled))) {
-                        (activity?.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).cancel(1)
-                    }
+                if (prefs != null && !prefs.getBoolean(key, resources.getBoolean(R.bool.pref_default_notify_running_recording_count_enabled))) {
+                    (activity?.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).cancel(1)
                 }
             }
             "notify_low_storage_space_enabled" -> {
-                if (prefs != null) {
-                    if (!prefs.getBoolean(key, resources.getBoolean(R.bool.pref_default_notify_low_storage_space_enabled))) {
-                        (activity?.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).cancel(2)
-                    }
+                if (prefs != null && !prefs.getBoolean(key, resources.getBoolean(R.bool.pref_default_notify_low_storage_space_enabled))) {
+                    (activity?.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).cancel(2)
                 }
             }
         }
@@ -297,7 +273,6 @@ class SettingsAdvancedFragment : PreferenceFragmentCompat(), Preference.OnPrefer
         context?.let {
             it.stopService(Intent(it, ConnectionService::class.java))
             settingsViewModel.setSyncRequiredForActiveConnection()
-
             val intent = Intent(it, MainActivity::class.java)
             intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             it.startActivity(intent)
@@ -327,7 +302,6 @@ class SettingsAdvancedFragment : PreferenceFragmentCompat(), Preference.OnPrefer
                     Timber.d("Deleting channel icons, invalidating cache and reloading icons via a background worker")
                     clearIconsFromCache(it)
                     it.sendSnackbarMessage(R.string.clear_icon_cache_done)
-
                     val loadChannelIcons = OneTimeWorkRequest.Builder(LoadChannelIconWorker::class.java).build()
                     WorkManager.getInstance(context.applicationContext).enqueueUniqueWork(LoadChannelIconWorker.WORK_NAME, ExistingWorkPolicy.APPEND, loadChannelIcons)
                 }
@@ -336,10 +310,6 @@ class SettingsAdvancedFragment : PreferenceFragmentCompat(), Preference.OnPrefer
         }
     }
 
-    /**
-     * Clear the cached channel icons by checking all cached files if their name
-     * matches with the url from a channel icon. If this is the case remove the file
-     */
     private fun clearIconsFromCache(context: Context) {
         val channels = settingsViewModel.getChannelList()
         if (context.cacheDir.exists()) {
