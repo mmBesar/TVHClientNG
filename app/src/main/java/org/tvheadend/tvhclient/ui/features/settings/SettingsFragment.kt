@@ -43,7 +43,6 @@ class SettingsFragment : PreferenceFragmentCompat(), Preference.OnPreferenceClic
         findPreference<Preference>("user_interface")?.onPreferenceClickListener = this
         findPreference<Preference>("profiles")?.onPreferenceClickListener = this
         findPreference<Preference>("playback")?.onPreferenceClickListener = this
-        findPreference<Preference>("unlocker")?.onPreferenceClickListener = this
         findPreference<Preference>("advanced")?.onPreferenceClickListener = this
         findPreference<Preference>("changelog")?.onPreferenceClickListener = this
         findPreference<Preference>("language")?.onPreferenceClickListener = this
@@ -51,6 +50,9 @@ class SettingsFragment : PreferenceFragmentCompat(), Preference.OnPreferenceClic
         findPreference<Preference>("information")?.onPreferenceClickListener = this
         findPreference<Preference>("privacy_policy")?.onPreferenceClickListener = this
         findPreference<Preference>("download_directory")?.onPreferenceClickListener = this
+
+        // Hide the unlocker option since all features are free
+        findPreference<Preference>("unlocker")?.isVisible = false
     }
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
@@ -71,13 +73,10 @@ class SettingsFragment : PreferenceFragmentCompat(), Preference.OnPreferenceClic
     private fun updateDownloadDirSummary() {
         Timber.d("Updating download directory summary")
         val path = if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
-            Timber.d("Android API version is ${Build.VERSION.SDK_INT}, loading download folder from preference")
             sharedPreferences.getString("download_directory", Environment.DIRECTORY_DOWNLOADS)
         } else {
-            Timber.d("Android API version is ${Build.VERSION.SDK_INT}, using default folder")
             Environment.DIRECTORY_DOWNLOADS
         }
-        Timber.d("Setting download directory summary to $path")
         findPreference<Preference>("download_directory")?.summary = getString(R.string.pref_download_directory_sum, path)
     }
 
@@ -86,8 +85,6 @@ class SettingsFragment : PreferenceFragmentCompat(), Preference.OnPreferenceClic
                 && grantResults[0] == PackageManager.PERMISSION_GRANTED
                 && permissions.isNotEmpty()
                 && permissions[0] == "android.permission.READ_EXTERNAL_STORAGE") {
-            // The delay is needed, otherwise an illegalStateException would be thrown. This is
-            // a known bug in android. Until it is fixed this workaround is required.
             Handler(Looper.getMainLooper()).postDelayed({
                 activity?.let { showFolderSelectionDialog(it) }
             }, 200)
@@ -111,7 +108,7 @@ class SettingsFragment : PreferenceFragmentCompat(), Preference.OnPreferenceClic
     override fun onPreferenceClick(preference: Preference): Boolean {
         when (preference.key) {
             "profiles" -> handlePreferenceProfilesSelected()
-            "playback" -> handlePreferencePlaybackSelected()
+            "playback" -> settingsViewModel.setNavigationMenuId("playback")
             "download_directory" -> handlePreferenceDownloadDirectorySelected()
             else -> settingsViewModel.setNavigationMenuId(preference.key)
         }
@@ -137,41 +134,24 @@ class SettingsFragment : PreferenceFragmentCompat(), Preference.OnPreferenceClic
         }
     }
 
-    private fun handlePreferencePlaybackSelected() {
-        if (!settingsViewModel.isUnlocked) {
-            context?.sendSnackbarMessage(R.string.feature_not_available_in_free_version)
-        } else {
-            settingsViewModel.setNavigationMenuId("playback")
-        }
-    }
-
     private fun handlePreferenceDownloadDirectorySelected() {
-        if (!settingsViewModel.isUnlocked) {
-            context?.sendSnackbarMessage(R.string.feature_not_available_in_free_version)
-        } else {
-            activity?.let {
-                if (isReadPermissionGranted(it)) {
-                    showFolderSelectionDialog(it)
-                }
+        activity?.let {
+            if (isReadPermissionGranted(it)) {
+                showFolderSelectionDialog(it)
             }
         }
     }
 
     private fun showFolderSelectionDialog(context: Context) {
-        Timber.d("Showing folder selection dialog")
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
-            Timber.d("Android API version is ${Build.VERSION.SDK_INT}, showing folder selection dialog")
-            // Show the folder chooser dialog which defaults to the external storage dir
             MaterialDialog(context).show {
                 folderChooser(context) { _, file ->
-                    Timber.d("Folder ${file.absolutePath}, ${file.name} was selected")
                     val strippedPath = file.absolutePath.replace(Environment.getExternalStorageDirectory().absolutePath, "")
                     sharedPreferences.edit().putString("download_directory", strippedPath).apply()
                     updateDownloadDirSummary()
                 }
             }
         } else {
-            Timber.d("Android API version is ${Build.VERSION.SDK_INT}, showing information about default folder")
             context.sendSnackbarMessage("On Android 10 and higher devices the download folder is always ${Environment.DIRECTORY_DOWNLOADS}")
         }
     }
