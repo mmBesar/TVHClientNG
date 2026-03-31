@@ -35,7 +35,6 @@ import org.tvheadend.tvhclient.ui.features.information.StatusFragment
 import org.tvheadend.tvhclient.ui.features.information.StatusViewModel
 import org.tvheadend.tvhclient.ui.features.information.WebViewFragment
 import org.tvheadend.tvhclient.ui.features.settings.SettingsActivity
-import org.tvheadend.tvhclient.ui.features.unlocker.UnlockerFragment
 import org.tvheadend.tvhclient.util.getThemeId
 import timber.log.Timber
 import java.util.*
@@ -54,7 +53,6 @@ class NavigationDrawer(private val activity: AppCompatActivity,
         createHeader()
         createMenu()
 
-        navigationViewModel.isUnlockedLiveData.observe(activity) { result.removeItem(MENU_UNLOCKER.toLong()) }
         navigationViewModel.connectionLiveData.observe(activity) {
             this.showConnectionsInDrawerHeader()
             headerResult.setActiveProfile(it.id.toLong())
@@ -63,25 +61,10 @@ class NavigationDrawer(private val activity: AppCompatActivity,
         statusViewModel.channelCount.observe(activity) { count -> result.updateBadge(MENU_CHANNELS.toLong(), StringHolder(count.toString())) }
         statusViewModel.seriesRecordingCount.observe(activity) { count -> result.updateBadge(MENU_SERIES_RECORDINGS.toLong(), StringHolder(count.toString())) }
         statusViewModel.timerRecordingCount.observe(activity) { count -> result.updateBadge(MENU_TIMER_RECORDINGS.toLong(), StringHolder(count.toString())) }
-        statusViewModel.completedRecordingCount.observe(activity) { count ->
-            result.updateBadge(
-                MENU_COMPLETED_RECORDINGS.toLong(),
-                StringHolder(count.toString())
-            )
-        }
-        statusViewModel.scheduledRecordingCount.observe(activity) { count ->
-            result.updateBadge(
-                MENU_SCHEDULED_RECORDINGS.toLong(),
-                StringHolder(count.toString())
-            )
-        }
+        statusViewModel.completedRecordingCount.observe(activity) { count -> result.updateBadge(MENU_COMPLETED_RECORDINGS.toLong(), StringHolder(count.toString())) }
+        statusViewModel.scheduledRecordingCount.observe(activity) { count -> result.updateBadge(MENU_SCHEDULED_RECORDINGS.toLong(), StringHolder(count.toString())) }
         statusViewModel.failedRecordingCount.observe(activity) { count -> result.updateBadge(MENU_FAILED_RECORDINGS.toLong(), StringHolder(count.toString())) }
-        statusViewModel.removedRecordingCount.observe(activity) { count ->
-            result.updateBadge(
-                MENU_REMOVED_RECORDINGS.toLong(),
-                StringHolder(count.toString())
-            )
-        }
+        statusViewModel.removedRecordingCount.observe(activity) { count -> result.updateBadge(MENU_REMOVED_RECORDINGS.toLong(), StringHolder(count.toString())) }
     }
 
     private fun createHeader() {
@@ -138,9 +121,6 @@ class NavigationDrawer(private val activity: AppCompatActivity,
                 .withIdentifier(MENU_SETTINGS.toLong()).withName(R.string.settings)
                 .withIcon(getResourceIdFromAttr(R.attr.ic_menu_settings))
                 .withSelectable(false)
-        val extrasItem = PrimaryDrawerItem()
-                .withIdentifier(MENU_UNLOCKER.toLong()).withName(R.string.pref_unlocker)
-                .withIcon(getResourceIdFromAttr(R.attr.ic_menu_extras))
         val helpItem = PrimaryDrawerItem()
                 .withIdentifier(MENU_HELP.toLong()).withName(R.string.help_and_support)
                 .withIcon(getResourceIdFromAttr(R.attr.ic_menu_help))
@@ -152,6 +132,7 @@ class NavigationDrawer(private val activity: AppCompatActivity,
                 .withOnDrawerItemClickListener(this)
                 .withSavedInstance(savedInstanceState)
 
+        // Unlocker menu item removed — all features are free
         drawerBuilder.addDrawerItems(
                 channelItem,
                 programGuideItem,
@@ -163,17 +144,13 @@ class NavigationDrawer(private val activity: AppCompatActivity,
                 failedRecordingsItem,
                 removedRecordingsItem,
                 DividerDrawerItem(),
-                extrasItem,
                 settingsItem,
                 helpItem,
                 statusItem)
 
         drawerBuilder.withOnDrawerNavigationListener(object : Drawer.OnDrawerNavigationListener {
             override fun onNavigationClickListener(clickedView: View): Boolean {
-                // this method is only called if the Arrow icon is shown.
-                // The hamburger is automatically managed by the MaterialDrawer
                 activity.onBackPressed()
-                // return true if we have consumed the event
                 return true
             }
         })
@@ -188,15 +165,11 @@ class NavigationDrawer(private val activity: AppCompatActivity,
     }
 
     private fun showConnectionsInDrawerHeader() {
-        // Remove old profiles from the header
         val profileIdList = ArrayList<Long>()
-        headerResult.profiles?.forEach {
-            profileIdList.add(it.identifier)
-        }
+        headerResult.profiles?.forEach { profileIdList.add(it.identifier) }
         for (id in profileIdList) {
             headerResult.removeProfileByIdentifier(id)
         }
-        // Add the existing connections as new profiles
         if (navigationViewModel.connections.isNotEmpty()) {
             navigationViewModel.connections.forEach {
                 headerResult.addProfiles(
@@ -212,11 +185,7 @@ class NavigationDrawer(private val activity: AppCompatActivity,
 
     override fun onProfileChanged(view: View?, profile: IProfile<*>, current: Boolean): Boolean {
         result.closeDrawer()
-
-        // Do nothing if the same profile has been selected
-        if (current) {
-            return true
-        }
+        if (current) return true
 
         MaterialDialog(activity).show {
             title(R.string.connect_to_new_server)
@@ -241,9 +210,7 @@ class NavigationDrawer(private val activity: AppCompatActivity,
         return true
     }
 
-    fun getSelectedMenu(): Int {
-        return result.currentSelection.toInt()
-    }
+    fun getSelectedMenu(): Int = result.currentSelection.toInt()
 
     fun saveInstanceState(outState: Bundle): Bundle {
         var out = outState
@@ -267,14 +234,10 @@ class NavigationDrawer(private val activity: AppCompatActivity,
             is FailedRecordingListFragment -> result.setSelection(MENU_FAILED_RECORDINGS.toLong(), false)
             is RemovedRecordingListFragment -> result.setSelection(MENU_REMOVED_RECORDINGS.toLong(), false)
             is StatusFragment -> result.setSelection(MENU_STATUS.toLong(), false)
-            is UnlockerFragment -> result.setSelection(MENU_UNLOCKER.toLong(), false)
             is WebViewFragment -> result.setSelection(MENU_HELP.toLong(), false)
         }
     }
 
-    /**
-     * Creates and returns a new fragment that is associated with the given menu
-     */
     private fun getFragmentFromSelectedNavigationDrawerMenu(position: Int): Fragment? {
         return when (position) {
             MENU_CHANNELS -> ChannelListFragment()
@@ -285,20 +248,12 @@ class NavigationDrawer(private val activity: AppCompatActivity,
             MENU_TIMER_RECORDINGS -> TimerRecordingListFragment()
             MENU_FAILED_RECORDINGS -> FailedRecordingListFragment()
             MENU_REMOVED_RECORDINGS -> RemovedRecordingListFragment()
-            MENU_UNLOCKER -> UnlockerFragment()
             MENU_HELP -> HelpAndSupportFragment()
             MENU_STATUS -> StatusFragment()
             else -> null
         }
     }
 
-    /**
-     * Called when a menu item from the navigation drawer was selected. It loads
-     * and shows the correct fragment or fragments depending on the selected
-     * menu item.
-     *
-     * @param id Selected position within the menu array
-     */
     fun handleDrawerItemSelected(id: Int) {
         Timber.d("Handling new navigation menu id $id")
 
@@ -307,11 +262,6 @@ class NavigationDrawer(private val activity: AppCompatActivity,
             return
         }
 
-        // A new or existing main fragment shall be shown. So save the menu position so we
-        // know which one was selected. Additionally remove any old details fragment in case
-        // dual pane mode is active to prevent showing wrong details data.
-        // Finally show the new main fragment and add it to the back stack
-        // only if it is a new fragment and not an existing one.
         val fragment = getFragmentFromSelectedNavigationDrawerMenu(id)
         if (fragment != null) {
             if (isDualPane) {
@@ -322,17 +272,13 @@ class NavigationDrawer(private val activity: AppCompatActivity,
             }
             activity.supportFragmentManager.beginTransaction().replace(R.id.main, fragment).let {
                 val addFragmentToBackStack = PreferenceManager.getDefaultSharedPreferences(activity).getBoolean("navigation_history_enabled", activity.resources.getBoolean(R.bool.pref_default_navigation_history_enabled))
-                if (addFragmentToBackStack) {
-                    it.addToBackStack(null)
-                }
+                if (addFragmentToBackStack) it.addToBackStack(null)
                 it.commit()
             }
         }
     }
 
     companion object {
-
-        // The index for the navigation drawer menus
         const val MENU_CHANNELS = 0
         const val MENU_PROGRAM_GUIDE = 1
         const val MENU_COMPLETED_RECORDINGS = 2
