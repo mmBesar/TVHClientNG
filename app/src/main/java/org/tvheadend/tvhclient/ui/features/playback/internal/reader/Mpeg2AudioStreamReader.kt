@@ -16,10 +16,9 @@
 
 package org.tvheadend.tvhclient.ui.features.playback.internal.reader
 
-import com.google.android.exoplayer2.C
-import com.google.android.exoplayer2.Format
-import com.google.android.exoplayer2.util.MimeTypes
-
+import androidx.media3.common.C
+import androidx.media3.common.Format
+import androidx.media3.common.MimeTypes
 import org.tvheadend.htsp.HtspMessage
 import org.tvheadend.tvhclient.ui.features.playback.internal.utils.TvhMappings
 
@@ -31,34 +30,26 @@ internal class Mpeg2AudioStreamReader : PlainStreamReader(C.TRACK_TYPE_AUDIO) {
             rate = TvhMappings.sriToRate(stream.getInteger("rate"))
         }
 
-        // TVHeadend calls all MPEG Audio MPEG2AUDIO - e.g. it could be either mp2 or mp3 audio. We
-        // need to use the new audio_version field (4.1.2498+ only). Default to mp2 as that's most
-        // common for DVB.
         var audioVersion = 2
-
         if (stream.containsKey("audio_version")) {
             audioVersion = stream.getInteger("audio_version")
         }
 
         val mimeType: String = when (audioVersion) {
-            1 -> MimeTypes.AUDIO_MPEG_L1    // MP1 Audio - V.Unlikely these days
-            2 -> MimeTypes.AUDIO_MPEG_L2    // MP2 Audio - Pretty common in DVB streams
-            3 -> MimeTypes.AUDIO_MPEG       // MP3 Audio - Pretty common in IPTV streams
+            1 -> MimeTypes.AUDIO_MPEG_L1
+            2 -> MimeTypes.AUDIO_MPEG_L2
+            3 -> MimeTypes.AUDIO_MPEG
             else -> throw RuntimeException("Unknown MPEG Audio Version: $audioVersion")
         }
 
-        return Format.createAudioSampleFormat(
-                streamIndex.toString(),
-                mimeType,
-                null,
-                Format.NO_VALUE,
-                Format.NO_VALUE,
-                stream.getInteger("channels", Format.NO_VALUE),
-                rate,
-                C.ENCODING_PCM_16BIT, null, null,
-                C.SELECTION_FLAG_AUTOSELECT,
-                stream.getString("language", "und")
-        )
+        return Format.Builder()
+            .setId(streamIndex.toString())
+            .setSampleMimeType(mimeType)
+            .setChannelCount(stream.getInteger("channels", Format.NO_VALUE))
+            .setSampleRate(rate)
+            .setSelectionFlags(C.SELECTION_FLAG_AUTOSELECT)
+            .setLanguage(stream.getString("language", "und"))
+            .build()
     }
 
     override val trackType: Int
