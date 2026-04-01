@@ -16,17 +16,15 @@
 
 package org.tvheadend.tvhclient.ui.features.playback.internal.reader
 
-import com.google.android.exoplayer2.C
-import com.google.android.exoplayer2.Format
-import com.google.android.exoplayer2.extractor.ExtractorOutput
-import com.google.android.exoplayer2.extractor.TrackOutput
-import com.google.android.exoplayer2.util.CodecSpecificDataUtil
-import com.google.android.exoplayer2.util.MimeTypes
-import com.google.android.exoplayer2.util.ParsableByteArray
+import androidx.media3.common.C
+import androidx.media3.common.Format
+import androidx.media3.common.MimeTypes
+import androidx.media3.common.util.ParsableByteArray
+import androidx.media3.extractor.ExtractorOutput
+import androidx.media3.extractor.TrackOutput
+import androidx.media3.extractor.ts.DefaultTsPayloadReaderFactory
 import org.tvheadend.htsp.HtspMessage
 import org.tvheadend.tvhclient.ui.features.playback.internal.utils.TvhMappings
-
-// See https://wiki.multimedia.cx/index.php?title=ADTS
 
 internal class AacStreamReader : StreamReader {
 
@@ -44,26 +42,19 @@ internal class AacStreamReader : StreamReader {
         val pba = ParsableByteArray(payload)
 
         val skipLength: Int = if (hasCrc(payload[1])) {
-            // Have a CRC
             ADTS_HEADER_SIZE + ADTS_CRC_SIZE
         } else {
-            // No CRC
             ADTS_HEADER_SIZE
         }
 
         pba.skipBytes(skipLength)
-
         val aacFrameLength = payload.size - skipLength
 
-        // TODO: Set Buffer Flag key frame based on frametype
-        // frametype   u32   required   Type of frame as ASCII value: 'I', 'P', 'B'
         mTrackOutput!!.sampleData(pba, aacFrameLength)
         mTrackOutput!!.sampleMetadata(pts, C.BUFFER_FLAG_KEY_FRAME, aacFrameLength, 0, null)
     }
 
     private fun buildFormat(streamIndex: Int, stream: HtspMessage): Format {
-        val initializationData: List<ByteArray>
-
         var rate = Format.NO_VALUE
         if (stream.containsKey("rate")) {
             rate = TvhMappings.sriToRate(stream.getInteger("rate"))
@@ -71,24 +62,21 @@ internal class AacStreamReader : StreamReader {
 
         val channels = stream.getInteger("channels", Format.NO_VALUE)
 
-        initializationData = if (stream.containsKey("meta")) {
+        val initializationData: List<ByteArray> = if (stream.containsKey("meta")) {
             listOf(stream.getByteArray("meta"))
         } else {
-            listOf(CodecSpecificDataUtil.buildAacLcAudioSpecificConfig(rate, channels))
+            listOf(buildAacLcAudioSpecificConfig(rate, channels))
         }
 
-        return Format.createAudioSampleFormat(
-                streamIndex.toString(),
-                MimeTypes.AUDIO_AAC, null,
-                Format.NO_VALUE,
-                Format.NO_VALUE,
-                channels,
-                rate,
-                C.ENCODING_PCM_16BIT,
-                initializationData, null,
-                C.SELECTION_FLAG_AUTOSELECT,
-                stream.getString("language", "und")
-        )
+        return Format.Builder()
+            .setId(streamIndex.toString())
+            .setSampleMimeType(MimeTypes.AUDIO_AAC)
+            .setChannelCount(channels)
+            .setSampleRate(rate)
+            .setInitializationData(initializationData)
+            .setSelectionFlags(C.SELECTION_FLAG_AUTOSELECT)
+            .setLanguage(stream.getString("language", "und"))
+            .build()
     }
 
     private fun hasCrc(b: Byte): Boolean {
@@ -96,8 +84,16 @@ internal class AacStreamReader : StreamReader {
         return (data and 0x1) == 0
     }
 
-    companion object {
+    private fun buildAacLcAudioSpecificConfig(sampleRate: Int, channelCount: Int): ByteArray {
+        // AAC-LC AudioSpecificConfig
+        val sampleRateTable = intArrayOf(96000, 88200, 64000, 48000, 44100, 32000, 24000, 22050, 16000, 12000, 11025, 8000, 7350)
+        val sampleRateIndex = sampleRateTable.indexOfFirst { it == sampleRate }.let { if (it == -1) 4 else it }
+        val channelIndex = if (channelCount == Format.NO_VALUE) 2 else channelCount
+        val config = (2 shl 11) or (sampleRateIndex shl 7) or (channelIndex shl 3)
+        return byteArrayOf((config shr 8).toByte(), (config and 0xFF).toByte())
+    }
 
+    companion object {
         private const val ADTS_HEADER_SIZE = 7
         private const val ADTS_CRC_SIZE = 2
     }
