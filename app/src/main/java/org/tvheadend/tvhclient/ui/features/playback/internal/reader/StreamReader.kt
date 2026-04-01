@@ -16,12 +16,10 @@
 
 package org.tvheadend.tvhclient.ui.features.playback.internal.reader
 
-import com.google.android.exoplayer2.extractor.ExtractorOutput
-
+import androidx.media3.extractor.ExtractorOutput
 import org.tvheadend.htsp.HtspMessage
 
 interface StreamReader {
     fun createTracks(stream: HtspMessage, output: ExtractorOutput)
-
     fun consume(message: HtspMessage)
 }
