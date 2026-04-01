@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2017 Kiall Mac Innes <kiall@macinnes.ie>
- * Copyright (C) 2016 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,16 +16,16 @@
 
 package org.tvheadend.tvhclient.ui.features.playback.internal.reader
 
-import com.google.android.exoplayer2.C
-import com.google.android.exoplayer2.Format
-import com.google.android.exoplayer2.extractor.ExtractorOutput
-import com.google.android.exoplayer2.extractor.TrackOutput
-import com.google.android.exoplayer2.util.MimeTypes
-import com.google.android.exoplayer2.util.ParsableByteArray
-import com.google.android.exoplayer2.util.Util
+import androidx.media3.common.C
+import androidx.media3.common.Format
+import androidx.media3.common.MimeTypes
+import androidx.media3.common.util.ParsableByteArray
+import androidx.media3.common.util.Util
+import androidx.media3.extractor.ExtractorOutput
+import androidx.media3.extractor.TrackOutput
 import org.tvheadend.htsp.HtspMessage
 import java.nio.charset.Charset
-import java.util.*
+import java.util.Locale
 
 internal class TextsubStreamReader : StreamReader {
 
@@ -39,62 +38,34 @@ internal class TextsubStreamReader : StreamReader {
     }
 
     override fun consume(message: HtspMessage) {
-
         val pts = message.getLong("pts")
         val duration = message.getInteger("duration").toLong()
         val payload = Util.getUtf8Bytes(
-                String(message.getByteArray("payload"), UTF_8).trim { it <= ' ' })
+            String(message.getByteArray("payload"), UTF_8).trim { it <= ' ' })
 
         val lengthWithPrefix = SUBRIP_PREFIX.size + payload.size
-        val subsipSample = SUBRIP_PREFIX.copyOf(lengthWithPrefix)
+        val subripSample = SUBRIP_PREFIX.copyOf(lengthWithPrefix)
+        System.arraycopy(payload, 0, subripSample, SUBRIP_PREFIX.size, payload.size)
+        setSubripSampleEndTimecode(subripSample, duration)
 
-        System.arraycopy(payload, 0, subsipSample, SUBRIP_PREFIX.size, payload.size)
-
-        setSubripSampleEndTimecode(subsipSample, duration)
-
-        mTrackOutput!!.sampleData(ParsableByteArray(subsipSample), lengthWithPrefix)
-        mTrackOutput!!.sampleMetadata(pts, C.BUFFER_FLAG_KEY_FRAME, lengthWithPrefix, 0,
-                null)
+        mTrackOutput!!.sampleData(ParsableByteArray(subripSample), lengthWithPrefix)
+        mTrackOutput!!.sampleMetadata(pts, C.BUFFER_FLAG_KEY_FRAME, lengthWithPrefix, 0, null)
     }
 
     private fun buildFormat(streamIndex: Int, stream: HtspMessage): Format {
-        return Format.createTextSampleFormat(
-                streamIndex.toString(),
-                MimeTypes.APPLICATION_SUBRIP,
-                C.SELECTION_FLAG_AUTOSELECT,
-                stream.getString("language", "und"), null
-        )
+        return Format.Builder()
+            .setId(streamIndex.toString())
+            .setSampleMimeType(MimeTypes.APPLICATION_SUBRIP)
+            .setSelectionFlags(C.SELECTION_FLAG_AUTOSELECT)
+            .setLanguage(stream.getString("language", "und"))
+            .build()
     }
 
     companion object {
-
-        /**
-         * A template for the prefix that must be added to each subrip sample. The 12 byte end timecode
-         * starting at [.SUBRIP_PREFIX_END_TIMECODE_OFFSET] is set to a dummy value, and must be
-         * replaced with the duration of the subtitle.
-         *
-         *
-         * Equivalent to the UTF-8 string: "1\n00:00:00,000 --> 00:00:00,000\n".
-         */
         private val SUBRIP_PREFIX = byteArrayOf(49, 10, 48, 48, 58, 48, 48, 58, 48, 48, 44, 48, 48, 48, 32, 45, 45, 62, 32, 48, 48, 58, 48, 48, 58, 48, 48, 44, 48, 48, 48, 10)
-        /**
-         * A special end timecode indicating that a subtitle should be displayed until the next subtitle,
-         * or until the end of the media in the case of the last subtitle.
-         *
-         *
-         * Equivalent to the UTF-8 string: "            ".
-         */
         private val SUBRIP_TIMECODE_EMPTY = byteArrayOf(32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32)
-        /**
-         * The byte offset of the end timecode in [.SUBRIP_PREFIX].
-         */
         private const val SUBRIP_PREFIX_END_TIMECODE_OFFSET = 19
-        /**
-         * The length in bytes of a timecode in a subrip prefix.
-         */
         private const val SUBRIP_TIMECODE_LENGTH = 12
-
-        // UTF-8 is the default on Android
         private val UTF_8 = Charset.defaultCharset()
 
         private fun setSubripSampleEndTimecode(subripSample: ByteArray, timeUs: Long) {
@@ -110,12 +81,11 @@ internal class TextsubStreamReader : StreamReader {
                 val seconds = (time / 1000000).toInt()
                 time -= (seconds * 1000000).toLong()
                 val milliseconds = (time / 1000).toInt()
-                timeCodeData = Util.getUtf8Bytes(String.format(Locale.US, "%02d:%02d:%02d,%03d", hours,
-                        minutes, seconds, milliseconds))
+                timeCodeData = Util.getUtf8Bytes(
+                    String.format(Locale.US, "%02d:%02d:%02d,%03d", hours, minutes, seconds, milliseconds)
+                )
             }
-
-            System.arraycopy(timeCodeData, 0, subripSample, SUBRIP_PREFIX_END_TIMECODE_OFFSET,
-                    SUBRIP_TIMECODE_LENGTH)
+            System.arraycopy(timeCodeData, 0, subripSample, SUBRIP_PREFIX_END_TIMECODE_OFFSET, SUBRIP_TIMECODE_LENGTH)
         }
     }
 }
