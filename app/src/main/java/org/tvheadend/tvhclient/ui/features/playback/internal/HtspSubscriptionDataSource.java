@@ -23,12 +23,12 @@ import android.net.Uri;
 import android.text.TextUtils;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.media3.common.C;
+import androidx.media3.datasource.DataSource;
+import androidx.media3.datasource.DataSpec;
+import androidx.media3.datasource.TransferListener;
 import androidx.preference.PreferenceManager;
-
-import com.google.android.exoplayer2.C;
-import com.google.android.exoplayer2.upstream.DataSource;
-import com.google.android.exoplayer2.upstream.DataSpec;
-import com.google.android.exoplayer2.upstream.TransferListener;
 
 import org.jetbrains.annotations.NotNull;
 import org.tvheadend.htsp.HtspConnection;
@@ -85,6 +85,7 @@ public class HtspSubscriptionDataSource implements DataSource, Closeable, Server
             this.streamProfile = streamProfile;
         }
 
+        @NonNull
         @Override
         public DataSource createDataSource() {
             Timber.d("Created new data source from factory");
@@ -125,17 +126,11 @@ public class HtspSubscriptionDataSource implements DataSource, Closeable, Server
         Timber.d("New subscription data source instantiated (" + dataSourceNumber + ")");
 
         try {
-            // Create the buffer, and place the HtspSubscriptionDataSource header in place.
             byteBuffer = ByteBuffer.allocate(BUFFER_SIZE);
             byteBuffer.limit(HEADER.length);
             byteBuffer.put(HEADER);
             byteBuffer.position(0);
-
         } catch (OutOfMemoryError e) {
-            // Since we're allocating a large buffer here, it's fairly safe to assume we'll have
-            // enough memory to catch and throw this exception. We do this, as each OOM exception
-            // message is unique (lots of #'s of bytes available/used/etc) and means crash reporting
-            // doesn't group things nicely.
             throw new RuntimeException("OutOfMemoryError when allocating subscription data source buffer (" + dataSourceNumber + ")", e);
         }
     }
@@ -148,12 +143,11 @@ public class HtspSubscriptionDataSource implements DataSource, Closeable, Server
     }
 
     @Override
-    public void addTransferListener(TransferListener transferListener) {
-
+    public void addTransferListener(@NonNull TransferListener transferListener) {
     }
 
     @Override
-    public long open(DataSpec dataSpec) {
+    public long open(@NonNull DataSpec dataSpec) {
         Timber.d("Opening subscription data source " + dataSourceNumber + ")");
         this.dataSpec = dataSpec;
 
@@ -161,7 +155,6 @@ public class HtspSubscriptionDataSource implements DataSource, Closeable, Server
             String path = dataSpec.uri.getPath();
             Timber.d("We are not yet subscribed to path %s", path);
             if (path != null && path.length() > 0) {
-
                 int channelId = Integer.parseInt(path.substring(1));
                 Timber.d("Sending subscription start to service with id " + subscriptionId + " for channel id " + channelId);
 
@@ -184,41 +177,34 @@ public class HtspSubscriptionDataSource implements DataSource, Closeable, Server
             }
         }
 
-        Timber.d("Getting seek position");
         long seekPosition = this.dataSpec.position;
         if (seekPosition > 0 && timeshiftPeriod > 0) {
             Timber.d("Sending subscription skip to server with id " + subscriptionId + " with time PTS: " + seekPosition);
-
             HtspMessage request = new HtspMessage();
             request.put("method", "subscriptionSkip");
             request.put("subscriptionId", subscriptionId);
             request.put("time", seekPosition);
             request.put("absolute", 1);
-
             htspConnection.sendMessage(request, null);
-
             byteBuffer.clear();
             byteBuffer.limit(0);
         }
 
         subscriptionStarted = true;
-
         return C.LENGTH_UNSET;
     }
 
     @Override
-    public int read(byte[] buffer, int offset, int readLength) {
+    public int read(@NonNull byte[] buffer, int offset, int readLength) {
         if (readLength == 0) {
             return 0;
         }
 
-        // If the buffer is empty, block until we have at least 1 byte
         while (subscriptionStarted && byteBuffer.remaining() == 0) {
             try {
                 Timber.v("Blocking for more data (" + dataSourceNumber + ")");
                 Thread.sleep(250);
             } catch (InterruptedException e) {
-                // Ignore.
                 Timber.w("Caught InterruptedException (" + dataSourceNumber + ")");
                 return 0;
             }
@@ -230,12 +216,10 @@ public class HtspSubscriptionDataSource implements DataSource, Closeable, Server
         }
 
         int length;
-
         lock.lock();
         try {
             int remaining = byteBuffer.remaining();
             length = Math.min(remaining, readLength);
-
             byteBuffer.get(buffer, offset, length);
             byteBuffer.compact();
             byteBuffer.flip();
@@ -246,6 +230,7 @@ public class HtspSubscriptionDataSource implements DataSource, Closeable, Server
         return length;
     }
 
+    @Nullable
     @Override
     public Uri getUri() {
         Timber.d("Returning data spec uri");
@@ -255,6 +240,7 @@ public class HtspSubscriptionDataSource implements DataSource, Closeable, Server
         return null;
     }
 
+    @NonNull
     @Override
     public Map<String, List<String>> getResponseHeaders() {
         Timber.d("Returning response headers");
@@ -274,11 +260,9 @@ public class HtspSubscriptionDataSource implements DataSource, Closeable, Server
             case "muxpkt":
                 serializeMessageToBuffer(message);
                 break;
-
             case "subscriptionStop":
                 subscriptionStarted = false;
                 break;
-
             case "subscriptionStatus":
             case "subscriptionSkip":
             case "subscriptionSpeed":
@@ -291,7 +275,6 @@ public class HtspSubscriptionDataSource implements DataSource, Closeable, Server
 
     private void release() {
         Timber.d("Releasing subscription data source " + dataSourceNumber + ")");
-
         HtspMessage request = new HtspMessage();
         request.put("method", "unsubscribe");
         request.put("subscriptionId", subscriptionId);
@@ -301,7 +284,6 @@ public class HtspSubscriptionDataSource implements DataSource, Closeable, Server
 
     public void pause() {
         Timber.d("Pausing subscription data source " + dataSourceNumber + ")");
-
         HtspMessage request = new HtspMessage();
         request.put("method", "subscriptionSpeed");
         request.put("subscriptionId", subscriptionId);
@@ -342,7 +324,6 @@ public class HtspSubscriptionDataSource implements DataSource, Closeable, Server
         context.startService(intent);
     }
 
-    // Misc Internal Methods
     private void serializeMessageToBuffer(@NonNull HtspMessage message) {
         lock.lock();
         try {
@@ -353,18 +334,14 @@ public class HtspSubscriptionDataSource implements DataSource, Closeable, Server
 
             byteBuffer.position(byteBuffer.limit());
             byteBuffer.limit(byteBuffer.capacity());
-
             byteBuffer.put(outputStream.toByteArray());
-
             byteBuffer.flip();
         } catch (IOException e) {
-            // Ignore?
             Timber.w(e, "Caught IOException, ignoring (" + dataSourceNumber + ")");
         } catch (BufferOverflowException e) {
             Timber.w(e, "Caught BufferOverflowException, ignoring (" + dataSourceNumber + ")");
         } finally {
             lock.unlock();
-            // Ignore
         }
     }
 }
