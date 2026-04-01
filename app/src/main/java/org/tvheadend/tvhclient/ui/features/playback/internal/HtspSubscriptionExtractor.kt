@@ -17,9 +17,13 @@
 package org.tvheadend.tvhclient.ui.features.playback.internal
 
 import android.util.SparseArray
-import com.google.android.exoplayer2.C
-import com.google.android.exoplayer2.extractor.*
-import com.google.android.exoplayer2.util.ParsableByteArray
+import androidx.media3.common.C
+import androidx.media3.extractor.Extractor
+import androidx.media3.extractor.ExtractorInput
+import androidx.media3.extractor.ExtractorOutput
+import androidx.media3.extractor.PositionHolder
+import androidx.media3.extractor.SeekMap
+import androidx.media3.common.util.ParsableByteArray
 import org.tvheadend.htsp.HtspMessage
 import org.tvheadend.tvhclient.ui.features.playback.internal.reader.StreamReader
 import org.tvheadend.tvhclient.ui.features.playback.internal.reader.StreamReadersFactory
@@ -27,7 +31,7 @@ import timber.log.Timber
 import java.io.ByteArrayInputStream
 import java.io.IOException
 import java.io.ObjectInputStream
-import java.util.*
+import java.util.Arrays
 
 internal class HtspSubscriptionExtractor : Extractor {
 
@@ -36,24 +40,14 @@ internal class HtspSubscriptionExtractor : Extractor {
     private val mRawBytes = ByteArray(1024 * 1024)
 
     private class HtspSeekMap : SeekMap {
-        override fun isSeekable(): Boolean {
-            return true
-        }
-
-        override fun getDurationUs(): Long {
-            return C.TIME_UNSET
-        }
-
-        override fun getSeekPoints(timeUs: Long): SeekMap.SeekPoints? {
-            return null
-        }
+        override fun isSeekable(): Boolean = true
+        override fun getDurationUs(): Long = C.TIME_UNSET
+        override fun getSeekPoints(timeUs: Long): SeekMap.SeekPoints? = null
     }
 
-    // Extractor Methods
-    @Throws(IOException::class, InterruptedException::class)
+    @Throws(IOException::class)
     override fun sniff(input: ExtractorInput): Boolean {
         val scratch = ParsableByteArray(HtspSubscriptionDataSource.HEADER.size)
-        // Find 8 bytes equal to HEADER at the start of the input.
         input.peekFully(scratch.data, 0, HtspSubscriptionDataSource.HEADER.size)
         return Arrays.equals(scratch.data, HtspSubscriptionDataSource.HEADER)
     }
@@ -64,7 +58,7 @@ internal class HtspSubscriptionExtractor : Extractor {
         mOutput.seekMap(HtspSeekMap())
     }
 
-    @Throws(IOException::class, InterruptedException::class)
+    @Throws(IOException::class)
     override fun read(input: ExtractorInput, seekPosition: PositionHolder): Int {
         val bytesRead = input.read(mRawBytes, 0, mRawBytes.size)
         Timber.d("Read $bytesRead bytes")
@@ -78,21 +72,17 @@ internal class HtspSubscriptionExtractor : Extractor {
                 }
             }
         } catch (e: IOException) {
-            // TODO: This is a problem, and returning RESULT_CONTINUE is a hack... I think?
             Timber.w("Caught IOException, returning RESULT_CONTINUE")
             return Extractor.RESULT_CONTINUE
         } catch (e: ClassNotFoundException) {
             Timber.w("Class Not Found")
         } finally {
             try {
-                if (objectInput != null) {
-                    objectInput!!.close()
-                }
+                objectInput?.close()
             } catch (ex: IOException) {
                 // Ignore
             }
-
-        }// N.B. Don't add the objectInput to this bit, it breaks stuff
+        }
         return Extractor.RESULT_CONTINUE
     }
 
@@ -105,10 +95,8 @@ internal class HtspSubscriptionExtractor : Extractor {
         mStreamReaders.clear()
     }
 
-    // Internal Methods
     private fun handleMessage(message: HtspMessage) {
         val method = message.getString("method")
-
         if (method == "subscriptionStart") {
             handleSubscriptionStart(message)
         } else if (method == "muxpkt") {
@@ -118,9 +106,7 @@ internal class HtspSubscriptionExtractor : Extractor {
 
     private fun handleSubscriptionStart(message: HtspMessage) {
         Timber.d("Handling Subscription Start")
-
         val streamReadersFactory = StreamReadersFactory()
-
         for (obj in message.getList("streams")) {
             val stream = obj as HtspMessage
             val streamIndex = stream.getInteger("index")
@@ -134,21 +120,11 @@ internal class HtspSubscriptionExtractor : Extractor {
                 Timber.d("Discarding stream at index $streamIndex, no suitable StreamReader")
             }
         }
-
         Timber.d("All streams have now been handled")
         mOutput.endTracks()
     }
 
     private fun handleMuxpkt(message: HtspMessage) {
-        //        subscriptionId     u32   required   Subscription ID.
-        //        frametype          u32   required   Type of frame as ASCII value: 'I', 'P', 'B'
-        //        stream             u32   required   Stream index. Corresponds to the streams reported in the subscriptionStart message.
-        //        dts                s64   optional   Decode Time Stamp in µs.
-        //        pts                s64   optional   Presentation Time Stamp in µs.
-        //        duration           u32   required   Duration of frame in µs.
-        //        payload            bin   required   Actual frame data.
-
-        // If the stream reader list contains null, then its not a stream we care about, so move on.
         val streamReader = mStreamReaders.get(message.getInteger("stream")) ?: return
         streamReader.consume(message)
     }
