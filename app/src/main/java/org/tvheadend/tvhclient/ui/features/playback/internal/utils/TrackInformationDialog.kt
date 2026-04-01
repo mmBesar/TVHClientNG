@@ -9,12 +9,10 @@ import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatDialog
 import androidx.fragment.app.DialogFragment
-import com.google.android.exoplayer2.Format
-import com.google.android.exoplayer2.Player
-import com.google.android.exoplayer2.SimpleExoPlayer
+import androidx.media3.common.Format
+import androidx.media3.exoplayer.ExoPlayer
 import org.tvheadend.tvhclient.R
-import java.util.*
-
+import java.util.Locale
 
 class TrackInformationDialog : DialogFragment() {
 
@@ -25,11 +23,10 @@ class TrackInformationDialog : DialogFragment() {
     private var titleId = 0
 
     init {
-        // Retain instance across activity re-creation to prevent losing access to init data.
         retainInstance = true
     }
 
-    private fun init(player: SimpleExoPlayer) {
+    private fun init(player: ExoPlayer) {
         titleId = R.string.pref_information
         videoFormat = player.videoFormat
         audioFormat = player.audioFormat
@@ -72,23 +69,24 @@ class TrackInformationDialog : DialogFragment() {
 
     private fun getPlayerStateString(): String {
         return when (playbackState) {
-            Player.STATE_BUFFERING -> "buffering"
-            Player.STATE_ENDED -> "ended"
-            Player.STATE_IDLE -> "idle"
-            Player.STATE_READY -> "ready"
+            androidx.media3.common.Player.STATE_BUFFERING -> "buffering"
+            androidx.media3.common.Player.STATE_ENDED -> "ended"
+            androidx.media3.common.Player.STATE_IDLE -> "idle"
+            androidx.media3.common.Player.STATE_READY -> "ready"
             else -> "unknown"
         }
     }
 
     private fun getPixelAspectRatioString(pixelAspectRatio: Float?): String {
-        return if (pixelAspectRatio == Format.NO_VALUE.toFloat()) " no value" else " ${String.format(Locale.US, "%.02f", pixelAspectRatio)}"
+        return if (pixelAspectRatio == null || pixelAspectRatio == Format.NO_VALUE.toFloat()) " no value"
+        else " ${String.format(Locale.US, "%.02f", pixelAspectRatio)}"
     }
 
     companion object {
-        fun createForTrackSelector(player: SimpleExoPlayer): TrackInformationDialog {
-            val trackInformationDialog = TrackInformationDialog()
-            trackInformationDialog.init(player)
-            return trackInformationDialog
+        fun createForTrackSelector(player: ExoPlayer): TrackInformationDialog {
+            val dialog = TrackInformationDialog()
+            dialog.init(player)
+            return dialog
         }
     }
 }
