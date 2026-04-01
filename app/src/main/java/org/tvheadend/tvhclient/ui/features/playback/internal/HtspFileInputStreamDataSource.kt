@@ -1,10 +1,26 @@
+/*
+ * Copyright (c) 2017 Kiall Mac Innes <kiall@macinnes.ie>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.tvheadend.tvhclient.ui.features.playback.internal
 
 import android.net.Uri
-import com.google.android.exoplayer2.C.RESULT_END_OF_INPUT
-import com.google.android.exoplayer2.upstream.DataSource
-import com.google.android.exoplayer2.upstream.DataSpec
-import com.google.android.exoplayer2.upstream.TransferListener
+import androidx.media3.common.C
+import androidx.media3.datasource.DataSource
+import androidx.media3.datasource.DataSpec
+import androidx.media3.datasource.TransferListener
 import org.tvheadend.htsp.HtspConnection
 import org.tvheadend.htsp.HtspMessage
 import org.tvheadend.api.ServerMessageListener
@@ -21,18 +37,14 @@ import kotlin.math.min
 class HtspFileInputStreamDataSource private constructor(val connection: HtspConnection) : DataSource, Closeable, ServerMessageListener<HtspMessage>, HtspDataSourceInterface {
 
     private val dataSourceCount = AtomicInteger()
-
     private val htspConnection: HtspConnection = connection
     private lateinit var dataSpec: DataSpec
     private var dataSourceNumber = 0
-
     private lateinit var byteBuffer: ByteBuffer
-
     private var fileName: String? = null
     private var fileId = -1
     private var fileSize: Long = -1
     private var filePosition: Long = 0
-
 
     class Factory internal constructor(htspConnection: HtspConnection) : DataSource.Factory {
 
@@ -48,7 +60,7 @@ class HtspFileInputStreamDataSource private constructor(val connection: HtspConn
         val currentDataSource: HtspFileInputStreamDataSource?
             get() {
                 Timber.d("Returning data source")
-                return if (dataSource != null) dataSource else null
+                return dataSource
             }
 
         fun releaseCurrentDataSource() {
@@ -57,7 +69,7 @@ class HtspFileInputStreamDataSource private constructor(val connection: HtspConn
         }
 
         init {
-            Timber.d("Initializing subscription data source factory")
+            Timber.d("Initializing file input stream data source factory")
             this.htspConnection = htspConnection
         }
     }
@@ -77,26 +89,15 @@ class HtspFileInputStreamDataSource private constructor(val connection: HtspConn
     override val timeshiftStartPts: Long
         get() = Long.MIN_VALUE
 
-    override fun setSpeed(tvhSpeed: Int) {
-        // NOP
-    }
+    override fun setSpeed(tvhSpeed: Int) {}
+    override fun resume() {}
+    override fun pause() {}
 
-    override fun resume() {
-        // No action needed
-    }
-
-    override fun pause() {
-        // No action needed
-    }
-
-    override fun addTransferListener(transferListener: TransferListener?) {
-        // NOP
-    }
+    override fun addTransferListener(transferListener: TransferListener?) {}
 
     override fun open(spec: DataSpec): Long {
         Timber.d("Opening file input data source $dataSourceNumber)")
         dataSpec = spec
-
         fileName = "dvrfile" + dataSpec.uri.path
 
         val fileReadRequest = HtspMessage()
@@ -109,18 +110,14 @@ class HtspFileInputStreamDataSource private constructor(val connection: HtspConn
         val fileReadHandler = object : ServerResponseListener<HtspMessage> {
             override fun handleResponse(response: HtspMessage) {
                 if (response.containsKey("error")) {
-                    val error = response.getString("error")
-                    Timber.d("Error reading file at offset 0: %s", error)
+                    Timber.d("Error reading file at offset 0: %s", response.getString("error"))
                 } else {
                     val data = response.getByteArray("data")
                     Timber.d("Fetched %s bytes of file at filePosition %s", data.size, filePosition)
                     filePosition += data.size.toLong()
                     byteBuffer = ByteBuffer.wrap(data)
                 }
-                lock.withLock {
-                    Timber.d("Notifying fileReadRequest")
-                    condition.signal()
-                }
+                lock.withLock { condition.signal() }
             }
         }
 
@@ -131,8 +128,7 @@ class HtspFileInputStreamDataSource private constructor(val connection: HtspConn
         htspConnection.sendMessage(fileOpenRequest, object : ServerResponseListener<HtspMessage> {
             override fun handleResponse(response: HtspMessage) {
                 if (response.containsKey("error")) {
-                    val error = response.getString("error")
-                    Timber.d("Error opening file: %s", error)
+                    Timber.d("Error opening file: %s", response.getString("error"))
                 } else {
                     Timber.d("Opening file: %s", fileName)
                     fileId = response.getInteger("id")
@@ -142,14 +138,12 @@ class HtspFileInputStreamDataSource private constructor(val connection: HtspConn
                     } else {
                         Timber.v("Opened file $fileName successfully")
                     }
-                    Timber.d("Sending file read request for file id %s", fileId)
                     fileReadRequest["id"] = fileId
                     htspConnection.sendMessage(fileReadRequest, fileReadHandler)
                 }
             }
         })
 
-        Timber.d("Waiting for fileReadRequest")
         lock.withLock {
             try {
                 condition.await(5, TimeUnit.SECONDS)
@@ -164,27 +158,20 @@ class HtspFileInputStreamDataSource private constructor(val connection: HtspConn
 
     override fun read(bytes: ByteArray, offset: Int, readLength: Int): Int {
         Timber.d("Read %s at offset %s with length %s", bytes.size, offset, readLength)
-        // If we've reached the end of the file, we're done :)
-        // If we've reached the end of the file, we're done :)
         if (fileSize == filePosition && !byteBuffer.hasRemaining()) {
             Timber.d("File has been read, returning -1")
-            return RESULT_END_OF_INPUT
+            return C.RESULT_END_OF_INPUT
         }
 
         sendFileRead(filePosition)
 
         if (!byteBuffer.hasRemaining() && fileSize == -1L) {
-            Timber.d("No data and no known size, returning -1")
-            // If we still don't have any data, and we
-            // don't have a known size, then we're done.
-            return RESULT_END_OF_INPUT
+            return C.RESULT_END_OF_INPUT
         } else if (!byteBuffer.hasRemaining()) {
-            // If we don't have data here, something went wrong
             Timber.d("Failed to read data for %s, returning -1", fileName)
-            return RESULT_END_OF_INPUT
+            return C.RESULT_END_OF_INPUT
         }
 
-        Timber.d("Getting bytes %s from offset %s, read length: %s, buffer elements remaining: %s", bytes.size, offset, readLength, byteBuffer.remaining())
         byteBuffer[bytes, offset, min(readLength, byteBuffer.remaining())]
         val bytesRead = byteBuffer.position() - offset
         Timber.d("Read %s bytes", bytesRead)
@@ -197,7 +184,6 @@ class HtspFileInputStreamDataSource private constructor(val connection: HtspConn
     }
 
     override fun getResponseHeaders(): Map<String, List<String>> {
-        Timber.d("Returning response headers")
         return emptyMap()
     }
 
@@ -205,11 +191,8 @@ class HtspFileInputStreamDataSource private constructor(val connection: HtspConn
         Timber.d("Closing file input data source $dataSourceNumber)")
     }
 
-    override fun onMessage(response: HtspMessage, method: String) {
-        // NOP
-    }
+    override fun onMessage(response: HtspMessage, method: String) {}
 
-    // HtspDataSource Methods
     private fun release() {
         Timber.d("Releasing file input data source $dataSourceNumber)")
         val request = HtspMessage()
@@ -228,9 +211,7 @@ class HtspFileInputStreamDataSource private constructor(val connection: HtspConn
         }
 
         var size: Long = 1024000
-        Timber.d("File size is %s", fileSize)
         if (fileSize != -1L) {
-            // Make sure we don't overrun the file
             if (offset + size > fileSize) {
                 size = fileSize - offset
             }
@@ -249,20 +230,17 @@ class HtspFileInputStreamDataSource private constructor(val connection: HtspConn
         htspConnection.sendMessage(request, object : ServerResponseListener<HtspMessage> {
             override fun handleResponse(response: HtspMessage) {
                 if (response.containsKey("error")) {
-                    val error = response.getString("error")
-                    Timber.d("Error reading file at $offset: $error")
+                    Timber.d("Error reading file at $offset: ${response.getString("error")}")
                 } else {
                     val data = response.getByteArray("data")
                     Timber.d("Fetched %s bytes of file at offset %s", data.size, offset)
                     filePosition += data.size.toLong()
                     byteBuffer = ByteBuffer.wrap(data)
                 }
-                synchronized(request) {
-                    condition.signal()
-                }
+                lock.withLock { condition.signal() }
             }
         })
-        Timber.d("Waiting for file read request")
+
         lock.withLock {
             try {
                 condition.await(5, TimeUnit.SECONDS)
