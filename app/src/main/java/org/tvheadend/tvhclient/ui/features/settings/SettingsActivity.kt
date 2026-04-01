@@ -1,6 +1,5 @@
 package org.tvheadend.tvhclient.ui.features.settings
 
-
 import android.content.Context
 import android.content.IntentFilter
 import android.os.Bundle
@@ -19,7 +18,6 @@ import org.tvheadend.tvhclient.ui.common.onAttach
 import org.tvheadend.tvhclient.ui.features.information.ChangeLogFragment
 import org.tvheadend.tvhclient.ui.features.information.InformationFragment
 import org.tvheadend.tvhclient.ui.features.information.PrivacyPolicyFragment
-import org.tvheadend.tvhclient.ui.features.unlocker.UnlockerFragment
 import org.tvheadend.tvhclient.util.extensions.showSnackbarMessage
 import org.tvheadend.tvhclient.util.getThemeId
 import timber.log.Timber
@@ -42,8 +40,6 @@ class SettingsActivity : AppCompatActivity(), RemoveFragmentFromBackstackInterfa
         settingsViewModel = ViewModelProvider(this)[SettingsViewModel::class.java]
         snackbarMessageReceiver = SnackbarMessageReceiver(settingsViewModel)
 
-        // If the user wants to go directly to a sub setting screen like the connections
-        // and not the main settings screen the setting type can be passed here
         if (savedInstanceState == null && intent.hasExtra("setting_type")) {
             val id = intent.getStringExtra("setting_type") ?: "default"
             settingsViewModel.setNavigationMenuId(id)
@@ -60,7 +56,6 @@ class SettingsActivity : AppCompatActivity(), RemoveFragmentFromBackstackInterfa
         }
 
         settingsViewModel.currentServerStatusLiveData.observe(this) { serverStatus ->
-            Timber.d("Received live data, server status has changed and is ${if (serverStatus != null) "" else "not "}available")
             if (serverStatus != null) {
                 settingsViewModel.currentServerStatus = serverStatus
             }
@@ -120,7 +115,6 @@ class SettingsActivity : AppCompatActivity(), RemoveFragmentFromBackstackInterfa
             "profiles" -> SettingsProfilesFragment()
             "playback" -> SettingsPlaybackFragment()
             "advanced" -> SettingsAdvancedFragment()
-            "unlocker" -> UnlockerFragment.newInstance(settingsViewModel.isUnlocked)
             "information" -> InformationFragment()
             "privacy_policy" -> PrivacyPolicyFragment()
             "changelog" -> ChangeLogFragment.newInstance(showFullChangelog = true)
@@ -128,11 +122,6 @@ class SettingsActivity : AppCompatActivity(), RemoveFragmentFromBackstackInterfa
         }
     }
 
-    /*
-     * Forwards the back press command to the fragment that implements the to handle the back press.
-     * This is usually required when a confirmation dialog shall be shown before exiting the fragment.
-     * Otherwise remove the last fragment from the back stack or close the activity in case only one fragment remains.
-     */
     @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
         val fragment = supportFragmentManager.findFragmentById(R.id.main)
