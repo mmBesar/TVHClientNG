@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2017 Kiall Mac Innes <kiall@macinnes.ie>
- * Copyright (C) 2016 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,20 +16,19 @@
 
 package org.tvheadend.tvhclient.ui.features.playback.internal.reader
 
-import com.google.android.exoplayer2.C
-import com.google.android.exoplayer2.Format
-import com.google.android.exoplayer2.ParserException
-import com.google.android.exoplayer2.util.MimeTypes
+import androidx.media3.common.C
+import androidx.media3.common.Format
+import androidx.media3.common.MimeTypes
+import androidx.media3.common.ParserException
 import org.tvheadend.htsp.HtspMessage
 import org.tvheadend.tvhclient.ui.features.playback.internal.utils.TvhMappings
 import timber.log.Timber
-import java.util.*
+import java.util.ArrayList
 
 internal class VorbisStreamReader : PlainStreamReader(C.TRACK_TYPE_AUDIO) {
 
     override fun buildFormat(streamIndex: Int, stream: HtspMessage): Format {
-        var initializationData: List<ByteArray>? =
-                null
+        var initializationData: List<ByteArray>? = null
 
         if (stream.containsKey("meta")) {
             try {
@@ -38,7 +36,6 @@ internal class VorbisStreamReader : PlainStreamReader(C.TRACK_TYPE_AUDIO) {
             } catch (e: ParserException) {
                 Timber.e("Failed to parse Vorbis meta, discarding")
             }
-
         }
 
         var rate = Format.NO_VALUE
@@ -46,34 +43,25 @@ internal class VorbisStreamReader : PlainStreamReader(C.TRACK_TYPE_AUDIO) {
             rate = TvhMappings.sriToRate(stream.getInteger("rate"))
         }
 
-        return Format.createAudioSampleFormat(
-                streamIndex.toString(),
-                MimeTypes.AUDIO_VORBIS, null,
-                Format.NO_VALUE,
-                Format.NO_VALUE,
-                stream.getInteger("channels", Format.NO_VALUE),
-                rate,
-                C.ENCODING_PCM_16BIT,
-                initializationData, null,
-                C.SELECTION_FLAG_AUTOSELECT,
-                stream.getString("language", "und")
-        )
+        return Format.Builder()
+            .setId(streamIndex.toString())
+            .setSampleMimeType(MimeTypes.AUDIO_VORBIS)
+            .setChannelCount(stream.getInteger("channels", Format.NO_VALUE))
+            .setSampleRate(rate)
+            .setInitializationData(initializationData)
+            .setSelectionFlags(C.SELECTION_FLAG_AUTOSELECT)
+            .setLanguage(stream.getString("language", "und"))
+            .build()
     }
 
     override val trackType: Int
         get() = C.TRACK_TYPE_AUDIO
 
-    /**
-     * Builds initialization data for a [Format] from Vorbis codec private data.
-     *
-     * @return The initialization data for the [Format].
-     * @throws ParserException If the initialization data could not be built.
-     */
     @Throws(ParserException::class)
     private fun parseVorbisCodecPrivate(codecPrivate: ByteArray): List<ByteArray> {
         try {
             if (codecPrivate[0].toInt() != 0x02) {
-                throw ParserException("Error parsing vorbis codec private")
+                throw ParserException.createForMalformedDataOfUnknownType("Error parsing vorbis codec private", null)
             }
             var offset = 1
             var vorbisInfoLength = 0
@@ -91,17 +79,17 @@ internal class VorbisStreamReader : PlainStreamReader(C.TRACK_TYPE_AUDIO) {
             vorbisSkipLength += codecPrivate[offset++].toInt()
 
             if (codecPrivate[offset].toInt() != 0x01) {
-                throw ParserException("Error parsing vorbis codec private")
+                throw ParserException.createForMalformedDataOfUnknownType("Error parsing vorbis codec private", null)
             }
             val vorbisInfo = ByteArray(vorbisInfoLength)
             System.arraycopy(codecPrivate, offset, vorbisInfo, 0, vorbisInfoLength)
             offset += vorbisInfoLength
             if (codecPrivate[offset].toInt() != 0x03) {
-                throw ParserException("Error parsing vorbis codec private")
+                throw ParserException.createForMalformedDataOfUnknownType("Error parsing vorbis codec private", null)
             }
             offset += vorbisSkipLength
             if (codecPrivate[offset].toInt() != 0x05) {
-                throw ParserException("Error parsing vorbis codec private")
+                throw ParserException.createForMalformedDataOfUnknownType("Error parsing vorbis codec private", null)
             }
             val vorbisBooks = ByteArray(codecPrivate.size - offset)
             System.arraycopy(codecPrivate, offset, vorbisBooks, 0, codecPrivate.size - offset)
@@ -110,9 +98,7 @@ internal class VorbisStreamReader : PlainStreamReader(C.TRACK_TYPE_AUDIO) {
             initializationData.add(vorbisBooks)
             return initializationData
         } catch (e: ArrayIndexOutOfBoundsException) {
-            throw ParserException("Error parsing vorbis codec private")
+            throw ParserException.createForMalformedDataOfUnknownType("Error parsing vorbis codec private", null)
         }
-
     }
-
 }
