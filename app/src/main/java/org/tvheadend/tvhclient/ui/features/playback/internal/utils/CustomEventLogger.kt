@@ -1,7 +1,7 @@
 package org.tvheadend.tvhclient.ui.features.playback.internal.utils
 
+import androidx.media3.common.C
 import androidx.media3.common.Tracks
-import androidx.media3.exoplayer.RendererCapabilities
 import androidx.media3.exoplayer.analytics.AnalyticsListener
 import androidx.media3.exoplayer.trackselection.MappingTrackSelector
 import timber.log.Timber
@@ -28,7 +28,8 @@ class CustomEventLogger(private val trackSelector: MappingTrackSelector) : Analy
                         val isSelected = tracks.isTrackSelected(trackGroup, trackIndex)
                         val format = trackGroup.getFormat(trackIndex)
                         val support = mappedTrackInfo.getTrackSupport(rendererIndex, groupIndex, trackIndex)
-                        val isSupported = RendererCapabilities.isFormatSupported(support)
+                        // C.FORMAT_HANDLED = 0x04 — fully supported format
+                        val isSupported = (support and 0x04) != 0
                         Timber.d("      Track:$trackIndex selected=$isSelected mimeType=${format.sampleMimeType} supported=$isSupported")
                     }
                 }
@@ -38,9 +39,9 @@ class CustomEventLogger(private val trackSelector: MappingTrackSelector) : Analy
 
     private fun getTrackTypeString(trackType: Int): String {
         return when (trackType) {
-            androidx.media3.common.C.TRACK_TYPE_VIDEO -> "video"
-            androidx.media3.common.C.TRACK_TYPE_AUDIO -> "audio"
-            androidx.media3.common.C.TRACK_TYPE_TEXT -> "text"
+            C.TRACK_TYPE_VIDEO -> "video"
+            C.TRACK_TYPE_AUDIO -> "audio"
+            C.TRACK_TYPE_TEXT -> "text"
             else -> "unknown"
         }
     }
