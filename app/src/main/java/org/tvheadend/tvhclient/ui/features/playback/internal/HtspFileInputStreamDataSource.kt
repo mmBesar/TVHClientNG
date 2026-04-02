@@ -54,7 +54,7 @@ class HtspFileInputStreamDataSource private constructor(val connection: HtspConn
         override fun createDataSource(): DataSource {
             Timber.d("Created new data source from factory")
             dataSource = HtspFileInputStreamDataSource(htspConnection)
-            return dataSource
+            return dataSource!!
         }
 
         val currentDataSource: HtspFileInputStreamDataSource?
@@ -93,7 +93,7 @@ class HtspFileInputStreamDataSource private constructor(val connection: HtspConn
     override fun resume() {}
     override fun pause() {}
 
-    override fun addTransferListener(transferListener: TransferListener?) {}
+    override fun addTransferListener(transferListener: TransferListener) {}
 
     override fun open(spec: DataSpec): Long {
         Timber.d("Opening file input data source $dataSourceNumber)")
