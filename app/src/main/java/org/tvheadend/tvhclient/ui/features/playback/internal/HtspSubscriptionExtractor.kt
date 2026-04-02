@@ -42,7 +42,7 @@ internal class HtspSubscriptionExtractor : Extractor {
     private class HtspSeekMap : SeekMap {
         override fun isSeekable(): Boolean = true
         override fun getDurationUs(): Long = C.TIME_UNSET
-        override fun getSeekPoints(timeUs: Long): SeekMap.SeekPoints = SeekMap.SeekPoints.NOTHING
+        override fun getSeekPoints(timeUs: Long): SeekMap.SeekPoints = SeekMap.SeekPoints(SeekMap.SeekPoint.START)
     }
 
     @Throws(IOException::class)
