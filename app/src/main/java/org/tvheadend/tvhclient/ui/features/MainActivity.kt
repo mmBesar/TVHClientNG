@@ -140,9 +140,6 @@ class MainActivity : AppCompatActivity(), ToolbarInterface, LayoutControlInterfa
         navigationViewModel = ViewModelProvider(this)[NavigationViewModel::class.java]
         statusViewModel = ViewModelProvider(this)[StatusViewModel::class.java]
 
-        // Allows billing to refresh purchases during onResume
-        lifecycle.addObserver(baseViewModel.billingLifecycleObserver)
-
         snackbarMessageReceiver = SnackbarMessageReceiver(baseViewModel)
         networkStatusReceiver = NetworkStatusReceiver(baseViewModel)
 
