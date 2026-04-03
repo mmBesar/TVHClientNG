@@ -2,8 +2,8 @@ package org.tvheadend.tvhclient.ui.features.playback.internal.utils;
 
 import android.text.TextUtils;
 
-import com.google.android.exoplayer2.Format;
-import com.google.android.exoplayer2.util.MimeTypes;
+import androidx.media3.common.Format;
+import androidx.media3.common.MimeTypes;
 
 import java.util.Locale;
 
@@ -16,46 +16,33 @@ class ExoPlayerUtils {
     }
 
     public static float androidSpeedToExoPlayerSpeed(float speed) {
-        // Translate the speed value from what Android uses, to what ExoPlayer expects. Must be
-        // greater than zero, and cannot be used for rewind.
         float translatedSpeed = switch ((int) speed) {
-            case 1 -> // Normal Playback
-                    1.0f;
-            case 2 -> // 2x Fast forward
-                    2.0f;
-            case 8 -> // 3x Fast forward
-                    3.0f;
-            case 32 -> // 4x Fast forward
-                    4.0f;
-            case 128 -> // 5x Fast forward
-                    5.0f;
+            case 1 -> 1.0f;
+            case 2 -> 2.0f;
+            case 8 -> 3.0f;
+            case 32 -> 4.0f;
+            case 128 -> 5.0f;
             default -> throw new IllegalArgumentException("Unknown speed: " + speed);
         };
         Timber.d("Translated android speed " + speed + " to ExoPlayer speed " + translatedSpeed);
         return translatedSpeed;
     }
 
-    /**
-     * Builds a track name for display.
-     *
-     * @param format {@link Format} of the track.
-     * @return a generated name specific to the track.
-     */
     static String buildTrackName(Format format) {
         String trackName;
         if (MimeTypes.isVideo(format.sampleMimeType)) {
             trackName = joinWithSeparator(joinWithSeparator(joinWithSeparator(
-                    buildResolutionString(format), buildBitrateString(format)), buildTrackIdString(format)),
-                    buildSampleMimeTypeString(format));
+                    buildResolutionString(format), buildBitrateString(format)),
+                    buildTrackIdString(format)), buildSampleMimeTypeString(format));
         } else if (MimeTypes.isAudio(format.sampleMimeType)) {
             trackName = joinWithSeparator(joinWithSeparator(joinWithSeparator(joinWithSeparator(
                     buildLanguageString(format), buildAudioPropertyString(format)),
                     buildBitrateString(format)), buildTrackIdString(format)),
                     buildSampleMimeTypeString(format));
         } else {
-            trackName = joinWithSeparator(joinWithSeparator(joinWithSeparator(buildLanguageString(format),
-                    buildBitrateString(format)), buildTrackIdString(format)),
-                    buildSampleMimeTypeString(format));
+            trackName = joinWithSeparator(joinWithSeparator(joinWithSeparator(
+                    buildLanguageString(format), buildBitrateString(format)),
+                    buildTrackIdString(format)), buildSampleMimeTypeString(format));
         }
         return trackName.length() == 0 ? "unknown" : trackName;
     }
@@ -71,8 +58,8 @@ class ExoPlayerUtils {
     }
 
     private static String buildLanguageString(Format format) {
-        return TextUtils.isEmpty(format.language) || "und".equals(format.language) ? ""
-                : format.language;
+        return TextUtils.isEmpty(format.language) || "und".equals(format.language)
+                ? "" : format.language;
     }
 
     private static String buildBitrateString(Format format) {
@@ -81,7 +68,8 @@ class ExoPlayerUtils {
     }
 
     private static String joinWithSeparator(String first, String second) {
-        return first.length() == 0 ? second : (second.length() == 0 ? first : first + ", " + second);
+        return first.length() == 0 ? second
+                : (second.length() == 0 ? first : first + ", " + second);
     }
 
     private static String buildTrackIdString(Format format) {
