@@ -23,6 +23,7 @@ import androidx.media3.extractor.ExtractorInput
 import androidx.media3.extractor.ExtractorOutput
 import androidx.media3.extractor.PositionHolder
 import androidx.media3.extractor.SeekMap
+import androidx.media3.extractor.SeekPoint
 import androidx.media3.common.util.ParsableByteArray
 import org.tvheadend.htsp.HtspMessage
 import org.tvheadend.tvhclient.ui.features.playback.internal.reader.StreamReader
@@ -42,7 +43,7 @@ internal class HtspSubscriptionExtractor : Extractor {
     private class HtspSeekMap : SeekMap {
         override fun isSeekable(): Boolean = true
         override fun getDurationUs(): Long = C.TIME_UNSET
-        override fun getSeekPoints(timeUs: Long): SeekMap.SeekPoints = SeekMap.SeekPoints(SeekMap.SeekPoint(0, 0))
+        override fun getSeekPoints(timeUs: Long): SeekMap.SeekPoints = SeekMap.SeekPoints(SeekPoint(0, 0))
     }
 
     @Throws(IOException::class)
