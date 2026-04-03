@@ -19,7 +19,7 @@ android {
         versionCode 241
         versionName "2.4.8-free"
 
-        applicationId "org.tvheadend.tvhclient"
+        applicationId "org.tvheadend.tvhclientng"
         setProperty("archivesBaseName", "${applicationId}-${versionName}-${versionCode}")
 
         buildConfigField "String", "DEVELOPER_EMAIL", "\"${appProperties['developerEmail']}\""
