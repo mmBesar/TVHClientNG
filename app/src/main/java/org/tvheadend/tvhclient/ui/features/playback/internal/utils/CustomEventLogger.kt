@@ -25,11 +25,20 @@ class CustomEventLogger(private val trackSelector: MappingTrackSelector) : Analy
                     val trackGroup = rendererTrackGroups[groupIndex]
                     Timber.d("    Group:$groupIndex")
                     for (trackIndex in 0 until trackGroup.length) {
-                        val isSelected = tracks.isTrackSelected(trackGroup, trackIndex)
                         val format = trackGroup.getFormat(trackIndex)
                         val support = mappedTrackInfo.getTrackSupport(rendererIndex, groupIndex, trackIndex)
-                        // C.FORMAT_HANDLED = 0x04 — fully supported format
                         val isSupported = (support and 0x04) != 0
+
+                        // Use Tracks.Group API to check if track is selected
+                        var isSelected = false
+                        for (trackGroupIndex in 0 until tracks.groups.size) {
+                            val group = tracks.groups[trackGroupIndex]
+                            if (group.mediaTrackGroup == trackGroup) {
+                                isSelected = group.isTrackSelected(trackIndex)
+                                break
+                            }
+                        }
+
                         Timber.d("      Track:$trackIndex selected=$isSelected mimeType=${format.sampleMimeType} supported=$isSupported")
                     }
                 }
