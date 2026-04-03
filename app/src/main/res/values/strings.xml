@@ -11,7 +11,7 @@
     <string name="airing">Airing</string>
     <string name="all_channels">All channels</string>
     <string name="any">Any</string>
-    <string name="app_name">TVHClient</string>
+    <string name="app_name">TVHClientNG</string>
     <string name="authentication_failed">Authentication failed</string>
     <string name="authentication_successful">Authentication successful</string>
     <string name="authentication_in_progress">Authentication in progress</string>
