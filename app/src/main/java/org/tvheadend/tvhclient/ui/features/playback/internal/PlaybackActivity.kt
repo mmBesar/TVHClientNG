@@ -22,11 +22,11 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
+import androidx.media3.common.Player
+import androidx.media3.ui.PlayerView
 import androidx.preference.PreferenceManager
 import com.afollestad.materialdialogs.MaterialDialog
 import com.afollestad.materialdialogs.list.listItemsSingleChoice
-import com.google.android.exoplayer2.Player
-import com.google.android.exoplayer2.ui.PlayerView
 import com.squareup.picasso.Callback
 import com.squareup.picasso.Picasso
 import org.tvheadend.tvhclient.R
@@ -88,10 +88,8 @@ class PlaybackActivity : AppCompatActivity() {
 
         playerView = findViewById<View>(R.id.player_view) as PlayerView
         playerStatus = findViewById<View>(R.id.player_status) as TextView
-
         exoPlayerSurfaceView = findViewById<View>(R.id.exo_player_surface_view) as SurfaceView
         exoPlayerFrame = findViewById<View>(R.id.exo_player_frame) as FrameLayout
-
         channelIcon = findViewById<View>(R.id.channel_icon) as ImageView
         channelName = findViewById<View>(R.id.channel_name) as TextView
         programTitle = findViewById<View>(R.id.program_title) as TextView
@@ -99,7 +97,6 @@ class PlaybackActivity : AppCompatActivity() {
         nextProgramTitle = findViewById<View>(R.id.next_program_title) as TextView
         elapsedTime = findViewById<View>(R.id.elapsed_time) as TextView
         remainingTime = findViewById<View>(R.id.remaining_time) as TextView
-
         playerRewind = findViewById<View>(R.id.player_rewind) as ImageButton
         playerPause = findViewById<View>(R.id.player_pause) as ImageButton
         playerPlay = findViewById<View>(R.id.player_play) as ImageButton
@@ -112,47 +109,34 @@ class PlaybackActivity : AppCompatActivity() {
         playerSettings = findViewById<View>(R.id.player_settings) as ImageButton
 
         timeshiftSupported = PreferenceManager.getDefaultSharedPreferences(this)
-                .getBoolean("timeshift_enabled", resources.getBoolean(R.bool.pref_default_timeshift_enabled))
+            .getBoolean("timeshift_enabled", resources.getBoolean(R.bool.pref_default_timeshift_enabled))
 
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager?
         orientation = sensorManager?.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
         orientationSensorListener = object : SensorEventListener {
-            override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
-                // NOP
-            }
+            override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
 
             override fun onSensorChanged(event: SensorEvent?) {
                 event?.let {
-                    if (value0 == it.values[0] && value1 == it.values[1]) {
-                        return
-                    }
+                    if (value0 == it.values[0] && value1 == it.values[1]) return
                     val orientation = -1
                     var value = orientation
 
-                    if (value0 < 0 && it.values[0] > 0) {
-                        // Setting rotation to 270°: Landscape reverse
-                        value = Surface.ROTATION_270
-                    } else if (value0 > 0 && it.values[0] < 0) {
-                        // Setting rotation to 90°: Landscape
-                        value = Surface.ROTATION_90
-                    } else if (value1 < 0 && it.values[1] > 0) {
-                        // Setting rotation to 180°: Portrait reverse
-                        value = Surface.ROTATION_180
-                    } else if (value1 > 0 && it.values[1] < 0) {
-                        // Setting rotation to 0°: Portrait
-                        value = Surface.ROTATION_0
-                    }
+                    if (value0 < 0 && it.values[0] > 0) value = Surface.ROTATION_270
+                    else if (value0 > 0 && it.values[0] < 0) value = Surface.ROTATION_90
+                    else if (value1 < 0 && it.values[1] > 0) value = Surface.ROTATION_180
+                    else if (value1 > 0 && it.values[1] < 0) value = Surface.ROTATION_0
 
                     if (orientation != value && !forceOrientation) {
                         if ((requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-                                        && (value == Surface.ROTATION_90 || value == Surface.ROTATION_270))
-                                || (requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-                                        && (value == Surface.ROTATION_0 || value == Surface.ROTATION_180))) {
+                                    && (value == Surface.ROTATION_90 || value == Surface.ROTATION_270))
+                            || (requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+                                    && (value == Surface.ROTATION_0 || value == Surface.ROTATION_180))
+                        ) {
                             Timber.d("Changing orientation")
                             requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
                         }
                     }
-
                     value0 = it.values[0]
                     value1 = it.values[1]
                 }
@@ -219,17 +203,14 @@ class PlaybackActivity : AppCompatActivity() {
                     playerStatus.visible()
                     exoPlayerSurfaceView.gone()
                 }
-
                 Player.STATE_BUFFERING -> {
                     playerStatus.visible()
                     exoPlayerSurfaceView.gone()
                     playerStatus.setText(R.string.player_is_loading_more_data)
                 }
-
                 Player.STATE_READY, Player.STATE_ENDED -> {
                     playerStatus.gone()
                     exoPlayerSurfaceView.visible()
-
                     playerAspectRatio.visible()
                     playerToggleFullscreen.visible()
                     playerInformation.visible()
@@ -264,7 +245,6 @@ class PlaybackActivity : AppCompatActivity() {
                         channelName.gone()
                         channelIcon.visible()
                     }
-
                     override fun onError(e: Exception) {
                         channelName.visible()
                         channelIcon.gone()
@@ -273,29 +253,19 @@ class PlaybackActivity : AppCompatActivity() {
         }
 
         viewModel.channelName.observe(this) { name ->
-            Timber.d("Received channel name $name")
             channelName.text = if (!name.isNullOrEmpty()) name else getString(R.string.all_channels)
         }
-        viewModel.title.observe(this) { title ->
-            Timber.d("Received title $title")
-            setOptionalDescriptionText(programTitle, title)
-        }
+        viewModel.title.observe(this) { title -> setOptionalDescriptionText(programTitle, title) }
         viewModel.subtitle.observe(this) { subtitle ->
-            Timber.d("Received subtitle $subtitle")
             setOptionalDescriptionText(programSubtitle, subtitle)
             programSubtitle.visibleOrGone(subtitle.isNotEmpty())
         }
         viewModel.nextTitle.observe(this) { nextTitle ->
-            Timber.d("Received next title $nextTitle")
             setOptionalDescriptionText(nextProgramTitle, nextTitle)
             nextProgramTitle.visibleOrGone(nextTitle.isNotEmpty())
         }
-        viewModel.elapsedTime.observe(this) { time ->
-            elapsedTime.text = time
-        }
-        viewModel.remainingTime.observe(this) { time ->
-            remainingTime.text = time
-        }
+        viewModel.elapsedTime.observe(this) { time -> elapsedTime.text = time }
+        viewModel.remainingTime.observe(this) { time -> remainingTime.text = time }
     }
 
     override fun attachBaseContext(context: Context) {
@@ -306,17 +276,13 @@ class PlaybackActivity : AppCompatActivity() {
         super.onNewIntent(intent)
         Timber.d("New intent")
         setIntent(intent)
-
-        Timber.d("Getting channel id or recording id from bundle")
         viewModel.loadMediaSource(applicationContext, intent.extras)
     }
 
     override fun onPause() {
         Timber.d("Pausing")
         viewModel.pause()
-        if (orientation != null) {
-            sensorManager?.unregisterListener(orientationSensorListener)
-        }
+        if (orientation != null) sensorManager?.unregisterListener(orientationSensorListener)
         super.onPause()
     }
 
@@ -324,7 +290,8 @@ class PlaybackActivity : AppCompatActivity() {
         super.onStop()
         Timber.d("Stopping")
         if ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
-                && packageManager.hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE)) {
+            && packageManager.hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE)
+        ) {
             Timber.d("Finishing playback activity")
             viewModel.stopPlaybackAndReleaseMediaSource()
             finish()
@@ -343,33 +310,16 @@ class PlaybackActivity : AppCompatActivity() {
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
         Timber.d("Configuration changed")
-        val ratio = selectedVideoAspectRatio
-        if (ratio != null) {
-            updateVideoAspectRatio(ratio)
-        }
+        selectedVideoAspectRatio?.let { updateVideoAspectRatio(it) }
         @Suppress("DEPRECATION")
         when (newConfig.orientation) {
-            Configuration.ORIENTATION_PORTRAIT -> {
-                Timber.d("Player is in portrait mode")
-                playerToggleFullscreen.setImageResource(R.drawable.ic_player_fullscreen)
-            }
-            Configuration.ORIENTATION_LANDSCAPE -> {
-                Timber.d("Player is in landscape mode")
-                playerToggleFullscreen.setImageResource(R.drawable.ic_player_fullscreen_exit)
-            }
-            Configuration.ORIENTATION_SQUARE -> {
-                Timber.d("Player is in square mode")
-            }
-            Configuration.ORIENTATION_UNDEFINED -> {
-                Timber.d("Player is in undefined mode")
-            }
+            Configuration.ORIENTATION_PORTRAIT -> playerToggleFullscreen.setImageResource(R.drawable.ic_player_fullscreen)
+            Configuration.ORIENTATION_LANDSCAPE -> playerToggleFullscreen.setImageResource(R.drawable.ic_player_fullscreen_exit)
         }
-
     }
 
     private fun updateVideoAspectRatio(videoAspect: VideoAspect) {
         Timber.d("Updating video dimensions")
-
         val screenWidth: Int
         val screenHeight: Int
 
@@ -390,21 +340,12 @@ class PlaybackActivity : AppCompatActivity() {
         val ratio = width.toFloat() / height.toFloat()
         val orientation = resources.configuration.orientation
 
-        Timber.d("Current video dimensions are $width:$height, ratio: $ratio")
-
         if (orientation == Configuration.ORIENTATION_PORTRAIT) {
-            if (width != screenWidth) {
-                width = screenWidth
-            }
+            if (width != screenWidth) width = screenWidth
             height = (width.toFloat() / ratio).toInt()
-            Timber.d("New portrait video dimensions are $width:$height")
-
         } else if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
-            if (height != screenHeight) {
-                height = screenHeight
-            }
+            if (height != screenHeight) height = screenHeight
             width = (height.toFloat() * ratio).toInt()
-            Timber.d("New landscape video dimensions are $width:$height")
         }
 
         exoPlayerFrame.let {
@@ -416,28 +357,21 @@ class PlaybackActivity : AppCompatActivity() {
         }
     }
 
-    private fun onPauseButtonSelected() {
-        Timber.d("Pause button selected")
-        viewModel.pause()
-    }
-
-    private fun onPlayButtonSelected() {
-        Timber.d("Play button selected")
-        viewModel.play()
-    }
+    private fun onPauseButtonSelected() { viewModel.pause() }
+    private fun onPlayButtonSelected() { viewModel.play() }
 
     private fun onSettingsButtonSelected() {
         Timber.d("Settings button selected")
         if (TrackSelectionDialog.willHaveContent(viewModel.trackSelector)) {
-            val trackSelectionDialog = TrackSelectionDialog.createForTrackSelector(viewModel.trackSelector)
-            trackSelectionDialog.show(supportFragmentManager, null)
+            TrackSelectionDialog.createForTrackSelector(viewModel.trackSelector)
+                .show(supportFragmentManager, null)
         }
     }
 
     private fun onInformationButtonSelected() {
         Timber.d("Information button selected")
-        val trackInformationDialog = TrackInformationDialog.createForTrackSelector(viewModel.player)
-        trackInformationDialog.show(supportFragmentManager, null)
+        TrackInformationDialog.createForTrackSelector(viewModel.player)
+            .show(supportFragmentManager, null)
     }
 
     private fun onChangeAspectRatioSelected() {
@@ -446,21 +380,16 @@ class PlaybackActivity : AppCompatActivity() {
         val height = selectedVideoAspectRatio?.height ?: 1
         val currentRatio = (width.toFloat() / height.toFloat()).toString().subStringUntilOrLess(4)
 
-        Timber.d("Current video dimensions are $width:$height, current ratio: $currentRatio:1, selected index $selectedVideoAspectIndex")
         if (selectedVideoAspectIndex == -1) {
             videoAspectRatioList.forEachIndexed { index, value ->
                 val ratio = (value.width.toFloat() / value.height.toFloat()).toString().subStringUntilOrLess(4)
-                Timber.d("Current ratio: $currentRatio, ratio: $ratio")
-                if (currentRatio == ratio) {
-                    selectedVideoAspectIndex = index
-                }
+                if (currentRatio == ratio) selectedVideoAspectIndex = index
             }
         }
 
         MaterialDialog(this).show {
             title(text = "Select the video aspect ratio")
             listItemsSingleChoice(items = videoAspectRatioNameList.toList(), initialSelection = selectedVideoAspectIndex) { _, which, _ ->
-                Timber.d("Selected aspect ratio index is $which")
                 selectedVideoAspectIndex = which
                 viewModel.setVideoAspectRatio(videoAspectRatioList[which])
             }
@@ -478,67 +407,40 @@ class PlaybackActivity : AppCompatActivity() {
                 forceOrientation = false
                 requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
             }
-            Configuration.ORIENTATION_SQUARE -> {
-
-            }
-            Configuration.ORIENTATION_UNDEFINED -> {
-
-            }
         }
     }
 
-    private fun onRewindButtonSelected() {
-        Timber.d("Rewind button selected")
-        viewModel.seekBackward()
-    }
-
-    private fun onForwardButtonSelected() {
-        Timber.d("Forward button selected")
-        viewModel.seekForward()
-    }
-
-    private fun onPlayPreviousChannelButtonSelected() {
-        Timber.d("Play previous channel button selected")
-        viewModel.playPreviousChannel(applicationContext)
-    }
-
-    private fun onPlayNextChannelButtonSelected() {
-        Timber.d("Play next channel button selected")
-        viewModel.playNextChannel(applicationContext)
-    }
+    private fun onRewindButtonSelected() { viewModel.seekBackward() }
+    private fun onForwardButtonSelected() { viewModel.seekForward() }
+    private fun onPlayPreviousChannelButtonSelected() { viewModel.playPreviousChannel(applicationContext) }
+    private fun onPlayNextChannelButtonSelected() { viewModel.playNextChannel(applicationContext) }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
-        Timber.d("Window focus changed to $hasFocus")
         if (hasFocus) {
-            if (Build.VERSION.SDK_INT >= 19) {
-                window.decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                        // Set the content to appear under the system bars so that the
-                        // content doesn't resize when the system bars hide and show.
-                        or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                        or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                        or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                        // Hide the nav bar and status bar
-                        or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                        or View.SYSTEM_UI_FLAG_FULLSCREEN)
-            }
+            @Suppress("DEPRECATION")
+            window.decorView.systemUiVisibility = (
+                View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                or View.SYSTEM_UI_FLAG_FULLSCREEN
+            )
         }
     }
 
     override fun onUserLeaveHint() {
         Timber.d("Checking if PIP mode can be entered")
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val ratio = selectedVideoAspectRatio
-            if (ratio != null) {
-                Timber.d("Entering PIP mode with ratio ${ratio.width}:${ratio.height}")
-                // Set the value already here because the onPause method is called before the onPictureInPictureModeChanged.
-                // This would pause the player before we know that the PIP mode has been entered.
-                viewModel.pipModeActive = true
-                enterPictureInPictureMode(
-                        PictureInPictureParams.Builder()
-                                .setAspectRatio(android.util.Rational(ratio.width, ratio.height))
-                                .build())
-            }
+            val ratio = selectedVideoAspectRatio ?: return
+            Timber.d("Entering PIP mode with ratio ${ratio.width}:${ratio.height}")
+            viewModel.pipModeActive = true
+            enterPictureInPictureMode(
+                PictureInPictureParams.Builder()
+                    .setAspectRatio(android.util.Rational(ratio.width, ratio.height))
+                    .build()
+            )
         }
     }
 
@@ -552,7 +454,9 @@ class PlaybackActivity : AppCompatActivity() {
     override fun finish() {
         super.finish()
         Timber.d("Finishing")
-        startActivity(Intent(this, MainActivity::class.java)
-                .addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT))
+        startActivity(
+            Intent(this, MainActivity::class.java)
+                .addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+        )
     }
 }
