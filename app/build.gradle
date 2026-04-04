@@ -54,7 +54,7 @@ android {
 
     kotlinOptions.jvmTarget = rootProject.ext.javaCompatibility.toString()
     testOptions.unitTests.includeAndroidResources = true
-    namespace 'org.tvheadend.tvhclient'
+    namespace 'org.tvheadend.tvhclientng'
 
     buildTypes {
         release {
