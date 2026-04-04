@@ -1,6 +1,10 @@
-# TVH Client NG
+# TVHClientNG
 
-[![Debug Build Status](https://github.com/mmBesar/TVHClientNG/workflows/Build%20Debug%20APK/badge.svg)](https://github.com/mmBesar/TVHClientNG/actions)
+A personal fork of [TVHClient](https://github.com/rsiebert/TVHClient) 
+by Robert Siebert, licensed under GPLv3.
 
-> Under heavy changes! Not ready YET
+This project is for personal use and active development.
+Not ready for general use.
 
+## License
+GPL-3.0 — see [LICENSE](LICENSE)
