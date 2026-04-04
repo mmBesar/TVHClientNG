@@ -397,7 +397,7 @@
 
         <variable
             name="viewModel"
-            type="org.tvheadend.tvhclient.ui.features.programs.ProgramViewModel" />
+            type="org.tvheadend.tvhclientng.ui.features.programs.ProgramViewModel" />
 
         <variable
             name="isProgramArtworkEnabled"

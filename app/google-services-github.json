@@ -10,7 +10,7 @@
       "client_info": {
         "mobilesdk_app_id": "${{ secrets.MOBILE_SDK_APP_ID }}",
         "android_client_info": {
-          "package_name": "org.tvheadend.tvhclient"
+          "package_name": "org.tvheadend.tvhclientng"
         }
       },
       "oauth_client": [

@@ -19,7 +19,7 @@ android {
         versionCode 241
         versionName "2.4.8-free"
 
-        applicationId "org.tvheadend.tvhclientng"
+        applicationId "org.tvheadend.tvhclientngng"
         setProperty("archivesBaseName", "${applicationId}-${versionName}-${versionCode}")
 
         buildConfigField "String", "DEVELOPER_EMAIL", "\"${appProperties['developerEmail']}\""
@@ -54,7 +54,7 @@ android {
 
     kotlinOptions.jvmTarget = rootProject.ext.javaCompatibility.toString()
     testOptions.unitTests.includeAndroidResources = true
-    namespace 'org.tvheadend.tvhclientng'
+    namespace 'org.tvheadend.tvhclientngng'
 
     buildTypes {
         release {

@@ -46,7 +46,7 @@ apply from: '../javadoc_library.gradle'
 ext {
     releaseVersion = '1.2.0'
     releaseArtifact = 'htsp'
-    releaseGroupId = 'org.tvheadend.tvhclient.htsp'
+    releaseGroupId = 'org.tvheadend.tvhclientng.htsp'
     releaseDescription = 'Android HTSP Library used by TVHClient to communicate with TVHeadend'
 }
 apply from: '../publish.gradle'

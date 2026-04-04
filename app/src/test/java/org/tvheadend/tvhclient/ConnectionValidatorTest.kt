@@ -1,10 +1,10 @@
-package org.tvheadend.tvhclient
+package org.tvheadend.tvhclientng
 
 import org.junit.Assert.assertEquals
 import org.junit.Test
-import org.tvheadend.tvhclient.ui.features.settings.ConnectionValidator
-import org.tvheadend.tvhclient.ui.features.settings.ValidationFailureReason
-import org.tvheadend.tvhclient.ui.features.settings.ValidationResult
+import org.tvheadend.tvhclientng.ui.features.settings.ConnectionValidator
+import org.tvheadend.tvhclientng.ui.features.settings.ValidationFailureReason
+import org.tvheadend.tvhclientng.ui.features.settings.ValidationResult
 
 class ConnectionValidatorTest {
 

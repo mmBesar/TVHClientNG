@@ -33,7 +33,7 @@ allprojects {
         mavenCentral()
         maven { url 'https://plugins.gradle.org/m2/' }
     }
-    group = 'org.tvheadend.tvhclient'
+    group = 'org.tvheadend.tvhclientng'
 }
 
 task clean(type: Delete) {

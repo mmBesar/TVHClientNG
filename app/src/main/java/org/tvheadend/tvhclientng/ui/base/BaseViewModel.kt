@@ -1,0 +1,107 @@
+package org.tvheadend.tvhclientng.ui.base
+
+import android.app.Application
+import android.content.Context
+import android.content.Intent
+import android.content.SharedPreferences
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.preference.PreferenceManager
+import org.tvheadend.data.AppRepository
+import org.tvheadend.data.entity.Connection
+import org.tvheadend.tvhclientng.MainApplication
+import org.tvheadend.tvhclientng.service.ConnectionService
+import org.tvheadend.tvhclientng.ui.common.NetworkStatus
+import org.tvheadend.tvhclientng.ui.common.interfaces.NetworkStatusInterface
+import org.tvheadend.tvhclientng.ui.common.interfaces.SnackbarMessageInterface
+import org.tvheadend.tvhclientng.ui.features.MainActivity
+import org.tvheadend.tvhclientng.util.livedata.Event
+import timber.log.Timber
+import javax.inject.Inject
+
+open class BaseViewModel(application: Application) : AndroidViewModel(application), SnackbarMessageInterface, NetworkStatusInterface {
+
+    @Inject
+    lateinit var appRepository: AppRepository
+
+    var sharedPreferences: SharedPreferences = PreferenceManager.getDefaultSharedPreferences(application.applicationContext)
+
+    var startupCompleteLiveData = MutableLiveData<Event<Boolean>>()
+        private set
+
+    var connectionToServerAvailableLiveData = MutableLiveData<Boolean>()
+        private set
+
+    var snackbarMessageLiveData = MutableLiveData<Event<Intent>>()
+        private set
+
+    var networkStatusLiveData = MutableLiveData<Event<NetworkStatus>>()
+        private set
+
+    var connection: Connection
+
+    // Always unlocked — billing has been removed
+    val isUnlockedLiveData: LiveData<Boolean> = MutableLiveData(true)
+    var isUnlocked = true
+
+    var htspVersion: Int
+    var removeFragmentWhenSearchIsDone = false
+
+    var searchQueryLiveData = MutableLiveData("")
+    var searchViewHasFocus = false
+
+    val isSearchActive: Boolean
+        get() = !searchQueryLiveData.value.isNullOrEmpty()
+
+    init {
+        inject()
+        startupCompleteLiveData.value = Event(false)
+        connection = appRepository.connectionData.activeItem
+        htspVersion = appRepository.serverStatusData.activeItem.htspVersion
+        connectionToServerAvailableLiveData.value = false
+        networkStatusLiveData.value = Event(NetworkStatus.NETWORK_UNKNOWN)
+    }
+
+    private fun inject() {
+        MainApplication.component.inject(this)
+    }
+
+    fun updateConnectionAndRestartApplication(context: Context?, isSyncRequired: Boolean = true) {
+        context?.let {
+            if (isSyncRequired) {
+                appRepository.connectionData.setSyncRequiredForActiveConnection()
+            }
+            context.stopService(Intent(context, ConnectionService::class.java))
+            val intent = Intent(context, MainActivity::class.java)
+            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            context.startActivity(intent)
+        }
+    }
+
+    fun startSearchQuery(query: String) {
+        searchQueryLiveData.value = query
+    }
+
+    fun clearSearchQuery() {
+        searchQueryLiveData.value = ""
+    }
+
+    override fun setSnackbarMessage(intent: Intent) {
+        snackbarMessageLiveData.value = Event(intent)
+    }
+
+    override fun setNetworkStatus(status: NetworkStatus) {
+        networkStatusLiveData.value = Event(status)
+    }
+
+    override fun getNetworkStatus(): NetworkStatus? = networkStatusLiveData.value?.peekContent()
+
+    fun setConnectionToServerAvailable(available: Boolean) {
+        connectionToServerAvailableLiveData.value = available
+    }
+
+    fun setStartupComplete(isComplete: Boolean) {
+        startupCompleteLiveData.value = Event(isComplete)
+    }
+}

@@ -25,7 +25,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-        <org.tvheadend.tvhclient.ui.features.information.CustomWebViewForLollipop
+        <org.tvheadend.tvhclientng.ui.features.information.CustomWebViewForLollipop
             android:id="@+id/webview"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"

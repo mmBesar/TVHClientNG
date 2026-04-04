@@ -363,7 +363,7 @@
 
         <variable
             name="viewModel"
-            type="org.tvheadend.tvhclient.ui.features.dvr.recordings.RecordingViewModel" />
+            type="org.tvheadend.tvhclientng.ui.features.dvr.recordings.RecordingViewModel" />
 
         <variable
             name="position"
@@ -383,6 +383,6 @@
 
         <variable
             name="callback"
-            type="org.tvheadend.tvhclient.ui.common.interfaces.RecyclerViewClickInterface" />
+            type="org.tvheadend.tvhclientng.ui.common.interfaces.RecyclerViewClickInterface" />
     </data>
 </layout>

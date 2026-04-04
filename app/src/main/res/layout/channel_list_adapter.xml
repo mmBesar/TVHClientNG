@@ -280,7 +280,7 @@
 
         <variable
             name="viewModel"
-            type="org.tvheadend.tvhclient.ui.features.channels.ChannelViewModel" />
+            type="org.tvheadend.tvhclientng.ui.features.channels.ChannelViewModel" />
 
         <variable
             name="isDualPane"
@@ -296,6 +296,6 @@
 
         <variable
             name="callback"
-            type="org.tvheadend.tvhclient.ui.common.interfaces.RecyclerViewClickInterface" />
+            type="org.tvheadend.tvhclientng.ui.common.interfaces.RecyclerViewClickInterface" />
     </data>
 </layout>

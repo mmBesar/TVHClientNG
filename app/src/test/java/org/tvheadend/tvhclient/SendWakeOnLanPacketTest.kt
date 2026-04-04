@@ -1,10 +1,10 @@
-package org.tvheadend.tvhclient
+package org.tvheadend.tvhclientng
 
 import org.junit.Assert
 import org.junit.Test
 import org.tvheadend.data.entity.Connection
-import org.tvheadend.tvhclient.ui.common.SendWakeOnLanPacket
-import org.tvheadend.tvhclient.ui.common.WakeOnLanTask
+import org.tvheadend.tvhclientng.ui.common.SendWakeOnLanPacket
+import org.tvheadend.tvhclientng.ui.common.WakeOnLanTask
 
 class SendWakeOnLanPacketTest {
 

@@ -1,0 +1,3 @@
+package org.tvheadend.tvhclientng.ui.common.interfaces
+
+interface HideNavigationDrawerInterface

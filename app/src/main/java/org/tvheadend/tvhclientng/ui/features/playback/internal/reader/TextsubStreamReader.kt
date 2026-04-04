@@ -1,0 +1,91 @@
+/*
+ * Copyright (c) 2017 Kiall Mac Innes <kiall@macinnes.ie>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.tvheadend.tvhclientng.ui.features.playback.internal.reader
+
+import androidx.media3.common.C
+import androidx.media3.common.Format
+import androidx.media3.common.MimeTypes
+import androidx.media3.common.util.ParsableByteArray
+import androidx.media3.common.util.Util
+import androidx.media3.extractor.ExtractorOutput
+import androidx.media3.extractor.TrackOutput
+import org.tvheadend.htsp.HtspMessage
+import java.nio.charset.Charset
+import java.util.Locale
+
+internal class TextsubStreamReader : StreamReader {
+
+    private var mTrackOutput: TrackOutput? = null
+
+    override fun createTracks(stream: HtspMessage, output: ExtractorOutput) {
+        val streamIndex = stream.getInteger("index")
+        mTrackOutput = output.track(streamIndex, C.TRACK_TYPE_TEXT)
+        mTrackOutput!!.format(buildFormat(streamIndex, stream))
+    }
+
+    override fun consume(message: HtspMessage) {
+        val pts = message.getLong("pts")
+        val duration = message.getInteger("duration").toLong()
+        val payload = Util.getUtf8Bytes(
+            String(message.getByteArray("payload"), UTF_8).trim { it <= ' ' })
+
+        val lengthWithPrefix = SUBRIP_PREFIX.size + payload.size
+        val subripSample = SUBRIP_PREFIX.copyOf(lengthWithPrefix)
+        System.arraycopy(payload, 0, subripSample, SUBRIP_PREFIX.size, payload.size)
+        setSubripSampleEndTimecode(subripSample, duration)
+
+        mTrackOutput!!.sampleData(ParsableByteArray(subripSample), lengthWithPrefix)
+        mTrackOutput!!.sampleMetadata(pts, C.BUFFER_FLAG_KEY_FRAME, lengthWithPrefix, 0, null)
+    }
+
+    private fun buildFormat(streamIndex: Int, stream: HtspMessage): Format {
+        return Format.Builder()
+            .setId(streamIndex.toString())
+            .setSampleMimeType(MimeTypes.APPLICATION_SUBRIP)
+            .setSelectionFlags(C.SELECTION_FLAG_AUTOSELECT)
+            .setLanguage(stream.getString("language", "und"))
+            .build()
+    }
+
+    companion object {
+        private val SUBRIP_PREFIX = byteArrayOf(49, 10, 48, 48, 58, 48, 48, 58, 48, 48, 44, 48, 48, 48, 32, 45, 45, 62, 32, 48, 48, 58, 48, 48, 58, 48, 48, 44, 48, 48, 48, 10)
+        private val SUBRIP_TIMECODE_EMPTY = byteArrayOf(32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32)
+        private const val SUBRIP_PREFIX_END_TIMECODE_OFFSET = 19
+        private const val SUBRIP_TIMECODE_LENGTH = 12
+        private val UTF_8 = Charset.defaultCharset()
+
+        private fun setSubripSampleEndTimecode(subripSample: ByteArray, timeUs: Long) {
+            var time = timeUs
+            val timeCodeData: ByteArray
+            if (time == C.TIME_UNSET || time == 0L) {
+                timeCodeData = SUBRIP_TIMECODE_EMPTY
+            } else {
+                val hours = (time / 3600000000L).toInt()
+                time -= hours * 3600000000L
+                val minutes = (time / 60000000).toInt()
+                time -= (minutes * 60000000).toLong()
+                val seconds = (time / 1000000).toInt()
+                time -= (seconds * 1000000).toLong()
+                val milliseconds = (time / 1000).toInt()
+                timeCodeData = Util.getUtf8Bytes(
+                    String.format(Locale.US, "%02d:%02d:%02d,%03d", hours, minutes, seconds, milliseconds)
+                )
+            }
+            System.arraycopy(timeCodeData, 0, subripSample, SUBRIP_PREFIX_END_TIMECODE_OFFSET, SUBRIP_TIMECODE_LENGTH)
+        }
+    }
+}

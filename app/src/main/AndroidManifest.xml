@@ -9,7 +9,7 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
     <application
-        android:name="org.tvheadend.tvhclient.MainApplication"
+        android:name="org.tvheadend.tvhclientng.MainApplication"
         android:allowBackup="true"
         android:extractNativeLibs="false"
         android:icon="@mipmap/ic_launcher"
@@ -26,7 +26,7 @@
             android:value="2.1" />
         <meta-data
             android:name="com.google.android.gms.cast.framework.OPTIONS_PROVIDER_CLASS_NAME"
-            android:value="org.tvheadend.tvhclient.MainApplication" />
+            android:value="org.tvheadend.tvhclientng.MainApplication" />
         <meta-data
             android:name="google_analytics_adid_collection_enabled"
             android:value="false" />
@@ -89,20 +89,20 @@
             android:supportsPictureInPicture="true" />
 
         <service
-            android:name="org.tvheadend.tvhclient.service.ConnectionService"
+            android:name="org.tvheadend.tvhclientng.service.ConnectionService"
             android:exported="false" />
         <service
-            android:name="org.tvheadend.tvhclient.service.ConnectionIntentService"
+            android:name="org.tvheadend.tvhclientng.service.ConnectionIntentService"
             android:exported="false"
             android:permission="android.permission.BIND_JOB_SERVICE" />
 
         <provider
             android:name=".ui.common.SuggestionProvider"
-            android:authorities="org.tvheadend.tvhclient.ui.common.SuggestionProvider"
+            android:authorities="org.tvheadend.tvhclientng.ui.common.SuggestionProvider"
             android:exported="false" />
         <provider
             android:name="androidx.core.content.FileProvider"
-            android:authorities="org.tvheadend.tvhclient.fileprovider"
+            android:authorities="org.tvheadend.tvhclientng.fileprovider"
             android:exported="false"
             android:grantUriPermissions="true">
             <meta-data

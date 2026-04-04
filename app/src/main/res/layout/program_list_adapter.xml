@@ -285,7 +285,7 @@
 
         <variable
             name="viewModel"
-            type="org.tvheadend.tvhclient.ui.features.programs.ProgramViewModel" />
+            type="org.tvheadend.tvhclientng.ui.features.programs.ProgramViewModel" />
 
         <variable
             name="position"
@@ -293,6 +293,6 @@
 
         <variable
             name="callback"
-            type="org.tvheadend.tvhclient.ui.common.interfaces.RecyclerViewClickInterface" />
+            type="org.tvheadend.tvhclientng.ui.common.interfaces.RecyclerViewClickInterface" />
     </data>
 </layout>

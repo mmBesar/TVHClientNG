@@ -473,7 +473,7 @@
 
         <variable
             name="viewModel"
-            type="org.tvheadend.tvhclient.ui.features.dvr.recordings.RecordingViewModel" />
+            type="org.tvheadend.tvhclientng.ui.features.dvr.recordings.RecordingViewModel" />
 
         <variable
             name="htspVersion"

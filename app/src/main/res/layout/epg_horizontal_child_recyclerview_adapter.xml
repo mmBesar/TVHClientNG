@@ -121,7 +121,7 @@
 
         <variable
             name="viewModel"
-            type="org.tvheadend.tvhclient.ui.features.epg.EpgViewModel" />
+            type="org.tvheadend.tvhclientng.ui.features.epg.EpgViewModel" />
 
         <variable
             name="layoutWidth"

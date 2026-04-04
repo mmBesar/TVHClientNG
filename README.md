@@ -54,8 +54,8 @@ Contact me either by
 
 Build customization can be performed via a `local-tvhclient.properties` file, for example:
 
-    org.tvheadend.tvhclient.acraReportUri=https://crashreport.com/report/tvhclient
-    org.tvheadend.tvhclient.keystoreFile=keystore.jks
-    org.tvheadend.tvhclient.keystorePassword=MySecretPassword
-    org.tvheadend.tvhclient.keyAlias=My TVHClient Key
-    org.tvheadend.tvhclient.keyPassword=MySecretPassword
+    org.tvheadend.tvhclientng.acraReportUri=https://crashreport.com/report/tvhclient
+    org.tvheadend.tvhclientng.keystoreFile=keystore.jks
+    org.tvheadend.tvhclientng.keystorePassword=MySecretPassword
+    org.tvheadend.tvhclientng.keyAlias=My TVHClient Key
+    org.tvheadend.tvhclientng.keyPassword=MySecretPassword
