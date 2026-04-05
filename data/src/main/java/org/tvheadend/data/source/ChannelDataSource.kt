@@ -2,7 +2,7 @@ package org.tvheadend.data.source
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.Transformations
+
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -81,7 +81,7 @@ class ChannelDataSource(private val db: AppRoomDatabase) : DataSourceInterface<C
     fun getAllEpgChannels(channelSortOrder: Int, tagIds: List<Int>): LiveData<List<EpgChannel>> {
         Timber.d("Loading epg channels with sort order $channelSortOrder and ${tagIds.size} tags")
         return if (tagIds.isEmpty()) {
-            Transformations.map(db.channelDao.loadAllEpgChannels(channelSortOrder)) { entities ->
+            db.channelDao.loadAllEpgChannels(channelSortOrder.map) { entities ->
                 entities.map { it.toEpgChannel() }
             }
         } else {
