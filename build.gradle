@@ -3,16 +3,16 @@
 buildscript {
     ext {
         kotlinVersion = '1.8.22'
-        compileSdkVersion = 34
-        minSdkVersion = 19
-        targetSdkVersion = 34
+        compileSdkVersion = 35
+        minSdkVersion = 26
+        targetSdkVersion = 35
         javaCompatibility = "17"
 
         timberVersion = '5.0.1'
-        appCompatVersion = '1.4.0'
-        daggerVersion = '2.48.1'
-        coreKtxVersion = "1.7.0"
-        prefKtxVersion = "1.1.1"
+        appCompatVersion = '1.7.0'
+        daggerVersion = '2.55'
+        coreKtxVersion = "1.16.0"
+        prefKtxVersion = "1.2.1"
     }
 
     repositories {
@@ -21,9 +21,8 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:8.1.4'
+        classpath 'com.android.tools.build:gradle:8.9.2'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
-        // Firebase and Google Services plugins removed — not needed for free build
     }
 }
 
