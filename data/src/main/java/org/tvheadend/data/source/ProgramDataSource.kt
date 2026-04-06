@@ -1,7 +1,7 @@
 package org.tvheadend.data.source
 
 import androidx.lifecycle.LiveData
-
+import androidx.lifecycle.map
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -31,8 +31,8 @@ class ProgramDataSource(private val db: AppRoomDatabase) : DataSourceInterface<P
     fun addItems(items: List<Program>) {
         if (items.isNotEmpty()) {
             ioScope.launch {
-                db.programDao.insert(ArrayList(items).mapNotNull { program -> program.let { item ->
-                    ProgramEntity.from(item) }
+                db.programDao.insert(ArrayList(items).mapNotNull { program ->
+                    program.let { item -> ProgramEntity.from(item) }
                 })
             }
         }
@@ -59,13 +59,13 @@ class ProgramDataSource(private val db: AppRoomDatabase) : DataSourceInterface<P
     }
 
     override fun getLiveDataItems(): LiveData<List<Program>> {
-        return db.programDao.loadPrograms(.map) { entities ->
+        return db.programDao.loadPrograms().map { entities ->
             entities.map { it.toProgram() }
         }
     }
 
     override fun getLiveDataItemById(id: Any): LiveData<Program> {
-        return db.programDao.loadProgramById(id as Int.map) { entity ->
+        return db.programDao.loadProgramById(id as Int).map { entity ->
             entity.toProgram()
         }
     }
@@ -87,13 +87,13 @@ class ProgramDataSource(private val db: AppRoomDatabase) : DataSourceInterface<P
     }
 
     fun getLiveDataItemsFromTime(time: Long): LiveData<List<Program>> {
-        return db.programDao.loadProgramsFromTime(time.map) { entities ->
+        return db.programDao.loadProgramsFromTime(time).map { entities ->
             entities.map { it.toProgram() }
         }
     }
 
     fun getLiveDataItemByChannelIdAndTime(channelId: Int, time: Long): LiveData<List<Program>> {
-        return Transformations.map(db.programDao.loadProgramsFromChannelFromTime(channelId, time)) { entities ->
+        return db.programDao.loadProgramsFromChannelFromTime(channelId, time).map { entities ->
             entities.map { it.toProgram() }
         }
     }
@@ -117,13 +117,10 @@ class ProgramDataSource(private val db: AppRoomDatabase) : DataSourceInterface<P
     fun getItemsByChannelId(channelId: Int): List<Program> {
         val programs = ArrayList<Program>()
         runBlocking(Dispatchers.IO) {
-
             val timeStep = 1000L * 3600 * 24 * 2
             val lastProgram = db.programDao.loadLastProgramFromChannelSync(channelId)?.toProgram()
             val startTime = System.currentTimeMillis()
             val endTime = lastProgram?.stop ?: startTime
-
-            // Load the programs in chunks to avoid a SQLiteBlobTooBigException
             for (time in startTime until endTime step timeStep) {
                 programs.addAll(db.programDao.loadProgramsFromChannelBetweenTimeSync(channelId, time, time + timeStep).map { it.toProgram() })
             }

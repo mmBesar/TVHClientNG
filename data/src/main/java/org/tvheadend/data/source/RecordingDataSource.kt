@@ -2,7 +2,7 @@ package org.tvheadend.data.source
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-
+import androidx.lifecycle.map
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -37,49 +37,49 @@ class RecordingDataSource(private val db: AppRoomDatabase) : DataSourceInterface
     }
 
     override fun getLiveDataItems(): LiveData<List<Recording>> {
-        return db.recordingDao.loadRecordings(.map) { entities ->
+        return db.recordingDao.loadRecordings().map { entities ->
             entities.map { it.toRecording() }
         }
     }
 
     override fun getLiveDataItemById(id: Any): LiveData<Recording> {
-        return db.recordingDao.loadRecordingById(id as Int.map) { entity ->
+        return db.recordingDao.loadRecordingById(id as Int).map { entity ->
             entity.toRecording()
         }
     }
 
     fun getLiveDataItemsByChannelId(channelId: Int): LiveData<List<Recording>> {
-        return db.recordingDao.loadRecordingsByChannelId(channelId.map) { entities ->
+        return db.recordingDao.loadRecordingsByChannelId(channelId).map { entities ->
             entities.map { it.toRecording() }
         }
     }
 
     fun getCompletedRecordings(sortOrder: Int): LiveData<List<Recording>> {
-        return db.recordingDao.loadCompletedRecordings(sortOrder.map) { entities ->
+        return db.recordingDao.loadCompletedRecordings(sortOrder).map { entities ->
             entities.map { it.toRecording() }
         }
     }
 
     fun getScheduledRecordings(hideDuplicates: Boolean): LiveData<List<Recording>> {
         return if (hideDuplicates) {
-            db.recordingDao.loadUniqueScheduledRecordings(.map) { entities ->
+            db.recordingDao.loadUniqueScheduledRecordings().map { entities ->
                 entities.map { it.toRecording() }
             }
         } else {
-            db.recordingDao.loadScheduledRecordings(.map) { entities ->
+            db.recordingDao.loadScheduledRecordings().map { entities ->
                 entities.map { it.toRecording() }
             }
         }
     }
 
     fun getFailedRecordings(): LiveData<List<Recording>> {
-        return db.recordingDao.loadFailedRecordings(.map) { entities ->
+        return db.recordingDao.loadFailedRecordings().map { entities ->
             entities.map { it.toRecording() }
         }
     }
 
     fun getRemovedRecordings(): LiveData<List<Recording>> {
-        return db.recordingDao.loadRemovedRecordings(.map) { entities ->
+        return db.recordingDao.loadRemovedRecordings().map { entities ->
             entities.map { it.toRecording() }
         }
     }
