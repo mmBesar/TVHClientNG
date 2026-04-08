@@ -67,7 +67,7 @@ class ChangeLogFragment : Fragment(), BackPressedInterface, HideNavigationDrawer
 
         Timber.d("Showing changelog, show full changelog: $showFullChangeLog")
         activity?.let {
-            scope.launch { loadChangeLogContents(it, versionName, showFullChangeLog) }
+            scope.launch { loadChangeLogContents(requireContext(), versionName, showFullChangeLog) }
         }
     }
 

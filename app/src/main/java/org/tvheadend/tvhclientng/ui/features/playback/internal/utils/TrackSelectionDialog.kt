@@ -62,7 +62,7 @@ class TrackSelectionDialog : DialogFragment() {
     }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        val dialog = AppCompatDialog(activity, R.style.TrackSelectionDialogThemeOverlay)
+        val dialog = AppCompatDialog(requireActivity(), R.style.TrackSelectionDialogThemeOverlay)
         dialog.setTitle(titleId)
         return dialog
     }

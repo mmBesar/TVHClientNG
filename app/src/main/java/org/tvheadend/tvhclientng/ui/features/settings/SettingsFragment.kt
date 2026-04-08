@@ -37,7 +37,7 @@ class SettingsFragment : PreferenceFragmentCompat(), Preference.OnPreferenceClic
             it.setSubtitle("")
         }
 
-        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(activity)
+        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(requireContext())
 
         findPreference<Preference>("list_connections")?.onPreferenceClickListener = this
         findPreference<Preference>("user_interface")?.onPreferenceClickListener = this
