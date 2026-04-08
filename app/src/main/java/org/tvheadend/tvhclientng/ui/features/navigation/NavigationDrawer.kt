@@ -271,7 +271,7 @@ class NavigationDrawer(private val activity: AppCompatActivity,
                 }
             }
             activity.supportFragmentManager.beginTransaction().replace(R.id.main, fragment).let {
-                val addFragmentToBackStack = PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean("navigation_history_enabled", activity.resources.getBoolean(R.bool.pref_default_navigation_history_enabled))
+                val addFragmentToBackStack = PreferenceManager.getDefaultSharedPreferences(activity).getBoolean("navigation_history_enabled", activity.resources.getBoolean(R.bool.pref_default_navigation_history_enabled))
                 if (addFragmentToBackStack) it.addToBackStack(null)
                 it.commit()
             }

@@ -66,9 +66,7 @@ class ChangeLogFragment : Fragment(), BackPressedInterface, HideNavigationDrawer
         webView?.setBackgroundColor(Color.argb(0, 0, 0, 0))
 
         Timber.d("Showing changelog, show full changelog: $showFullChangeLog")
-        activity?.let {
-            scope.launch { loadChangeLogContents(requireContext(), versionName, showFullChangeLog) }
-        }
+        scope.launch { loadChangeLogContents(requireContext(), versionName, showFullChangeLog) }
     }
 
     override fun onDestroy() {
