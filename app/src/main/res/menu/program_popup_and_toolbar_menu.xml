@@ -11,7 +11,7 @@
         android:id="@+id/menu_cast"
         android:icon="?attr/ic_menu_cast"
         android:title="@string/cast"
-        app:showAsAction="ifRoom|withText" />
+        app:showAsAction="never" />
     <item
         android:id="@+id/menu_record_program"
         android:icon="?attr/ic_menu_record_once"
