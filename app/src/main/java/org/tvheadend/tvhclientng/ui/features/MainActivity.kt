@@ -444,7 +444,7 @@ class MainActivity : AppCompatActivity(), ToolbarInterface, LayoutControlInterfa
                 menu.findItem(R.id.menu_send_wake_on_lan_packet)?.isVisible = baseViewModel.isUnlocked && baseViewModel.connection.isWolEnabled
             }
             else -> {
-                menu.findItem(R.id.media_route_menu_item)?.isVisible = baseViewModel.isUnlocked
+                menu.findItem(R.id.media_route_menu_item)?.isVisible = false
                 menu.findItem(R.id.menu_send_wake_on_lan_packet)?.isVisible = baseViewModel.isUnlocked && baseViewModel.connection.isWolEnabled
             }
         }
