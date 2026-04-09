@@ -139,7 +139,7 @@ class ProgramListFragment : BaseFragment(), RecyclerViewClickInterface, LastProg
 
         if (!baseViewModel.isSearchActive && isConnectionToServerAvailable) {
             menu.findItem(R.id.menu_play)?.isVisible = true
-            menu.findItem(R.id.menu_cast)?.isVisible = ctx.getCastSession() != null
+            menu.findItem(R.id.menu_cast)?.isVisible = false
         } else {
             menu.findItem(R.id.menu_play)?.isVisible = false
             menu.findItem(R.id.menu_cast)?.isVisible = false
