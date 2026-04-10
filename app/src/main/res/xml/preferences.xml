@@ -61,9 +61,6 @@
             android:key="information"
             android:summary="@string/pref_information_sum"
             android:title="@string/pref_information" />
-        <Preference
-            android:key="privacy_policy"
-            android:title="@string/pref_privacy_policy" />
     </PreferenceCategory>
 
 </PreferenceScreen>

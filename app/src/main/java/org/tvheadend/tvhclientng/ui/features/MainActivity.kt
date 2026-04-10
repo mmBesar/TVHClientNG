@@ -66,8 +66,6 @@ import org.tvheadend.tvhclientng.ui.common.showOrCancelNotificationDiskSpaceIsLo
 import org.tvheadend.tvhclientng.ui.common.showOrCancelNotificationProgramIsCurrentlyBeingRecorded
 import org.tvheadend.tvhclientng.ui.features.dvr.recordings.download.DownloadPermissionGrantedInterface
 import org.tvheadend.tvhclientng.ui.features.information.ChangeLogFragment
-import org.tvheadend.tvhclientng.ui.features.information.PrivacyPolicyFragment
-import org.tvheadend.tvhclientng.ui.features.information.StartupPrivacyPolicyFragment
 import org.tvheadend.tvhclientng.ui.features.information.StatusViewModel
 import org.tvheadend.tvhclientng.ui.features.navigation.NavigationDrawer
 import org.tvheadend.tvhclientng.ui.features.navigation.NavigationViewModel
@@ -155,16 +153,6 @@ class MainActivity : AppCompatActivity(), ToolbarInterface, LayoutControlInterfa
                     .replace(R.id.main, StartupFragment())
                     .addToBackStack(null)
                     .commit()
-
-            val showPrivacyPolicyRequired = sharedPreferences.getBoolean("showPrivacyPolicy", true)
-            Timber.d("Privacy policy needs to be displayed $showPrivacyPolicyRequired")
-            if (showPrivacyPolicyRequired) {
-                supportFragmentManager.beginTransaction()
-                        .replace(R.id.main, StartupPrivacyPolicyFragment())
-                        .addToBackStack(null)
-                        .commit()
-                supportActionBar?.setDisplayHomeAsUpEnabled(false)
-            }
 
             // Show the full changelog if the changelog was never shown before (app version
             // name is empty) or if it was already shown and the version name is the same as
@@ -435,7 +423,6 @@ class MainActivity : AppCompatActivity(), ToolbarInterface, LayoutControlInterfa
                 menu.findItem(R.id.media_route_menu_item)?.isVisible = false
                 menu.findItem(R.id.menu_search).isVisible = false
                 menu.findItem(R.id.menu_reconnect_to_server).isVisible = false
-                menu.findItem(R.id.menu_privacy_policy).isVisible = false
                 menu.findItem(R.id.menu_send_wake_on_lan_packet)?.isVisible = false
             }
             NavigationDrawer.MENU_STATUS -> {
@@ -455,15 +442,6 @@ class MainActivity : AppCompatActivity(), ToolbarInterface, LayoutControlInterfa
         return when (item.itemId) {
             android.R.id.home -> {
                 onBackPressed()
-                true
-            }
-            R.id.menu_privacy_policy -> {
-                Timber.d("Showing privacy policy fragment")
-                val fragment: Fragment = PrivacyPolicyFragment()
-                supportFragmentManager.beginTransaction()
-                        .replace(R.id.main, fragment)
-                        .addToBackStack(null)
-                        .commit()
                 true
             }
             R.id.menu_reconnect_to_server -> showConfirmationToReconnectToServer(this, baseViewModel)
