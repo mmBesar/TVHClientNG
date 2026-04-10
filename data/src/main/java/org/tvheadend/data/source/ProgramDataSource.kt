@@ -66,7 +66,7 @@ class ProgramDataSource(private val db: AppRoomDatabase) : DataSourceInterface<P
 
     override fun getLiveDataItemById(id: Any): LiveData<Program> {
         return db.programDao.loadProgramById(id as Int).map { entity ->
-            entity.toProgram()
+            entity?.toProgram() ?: Program()
         }
     }
 

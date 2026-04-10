@@ -44,7 +44,7 @@ class RecordingDataSource(private val db: AppRoomDatabase) : DataSourceInterface
 
     override fun getLiveDataItemById(id: Any): LiveData<Recording> {
         return db.recordingDao.loadRecordingById(id as Int).map { entity ->
-            entity.toRecording()
+            entity?.toRecording() ?: Recording()
         }
     }
 

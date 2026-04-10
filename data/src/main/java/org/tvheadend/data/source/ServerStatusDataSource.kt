@@ -70,7 +70,7 @@ class ServerStatusDataSource(private val db: AppRoomDatabase) : DataSourceInterf
 
     override fun getLiveDataItemById(id: Any): LiveData<ServerStatus> {
         return db.serverStatusDao.loadServerStatusById(id as Int).map { entity ->
-            entity.toServerStatus()
+            entity?.toServerStatus() ?: ServerStatus()
         }
     }
 

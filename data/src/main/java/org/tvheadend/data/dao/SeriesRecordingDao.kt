@@ -25,7 +25,7 @@ internal interface SeriesRecordingDao {
     @Query(RECORDING_BASE_QUERY +
             " WHERE $CONNECTION_IS_ACTIVE" +
             " AND rec.id = :id")
-    fun loadRecordingById(id: String): LiveData<SeriesRecordingEntity>
+    fun loadRecordingById(id: String): LiveData<SeriesRecordingEntity?>
 
     @Transaction
     @Query(RECORDING_BASE_QUERY +

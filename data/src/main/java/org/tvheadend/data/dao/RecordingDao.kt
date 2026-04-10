@@ -86,7 +86,7 @@ internal interface RecordingDao {
     @Query(RECORDING_BASE_QUERY +
             " WHERE $CONNECTION_IS_ACTIVE" +
             " AND rec.id = :id")
-    fun loadRecordingById(id: Int): LiveData<RecordingEntity>
+    fun loadRecordingById(id: Int): LiveData<RecordingEntity?>
 
     @Transaction
     @Query(RECORDING_BASE_QUERY +

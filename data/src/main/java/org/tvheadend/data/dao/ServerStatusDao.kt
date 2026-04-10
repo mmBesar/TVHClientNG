@@ -18,7 +18,7 @@ internal interface ServerStatusDao {
     fun loadActiveServerStatusSync(): ServerStatusEntity?
 
     @Query("$SERVER_STATUS_BASE_QUERY WHERE $CONNECTION_IS_ACTIVE")
-    fun loadActiveServerStatus(): LiveData<ServerStatusEntity>
+    fun loadActiveServerStatus(): LiveData<ServerStatusEntity?>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insert(serverStatus: ServerStatusEntity)
@@ -36,7 +36,7 @@ internal interface ServerStatusDao {
     fun loadServerStatusByIdSync(id: Int): ServerStatusEntity?
 
     @Query("$SERVER_STATUS_BASE_QUERY WHERE s.connection_id = :id")
-    fun loadServerStatusById(id: Int): LiveData<ServerStatusEntity>
+    fun loadServerStatusById(id: Int): LiveData<ServerStatusEntity?>
 
     @get:Query("SELECT COUNT (*) FROM server_status AS s WHERE $CONNECTION_IS_ACTIVE")
     val serverStatusCount: LiveData<Int>

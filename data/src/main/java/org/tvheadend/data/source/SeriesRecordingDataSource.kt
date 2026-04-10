@@ -39,7 +39,7 @@ class SeriesRecordingDataSource(private val db: AppRoomDatabase) : DataSourceInt
 
     override fun getLiveDataItemById(id: Any): LiveData<SeriesRecording> {
         return db.seriesRecordingDao.loadRecordingById(id as String).map { entity ->
-            entity.toRecording()
+            entity?.toRecording() ?: SeriesRecording()
         }
     }
 

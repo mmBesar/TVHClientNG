@@ -17,7 +17,7 @@ internal interface ConnectionDao {
     fun loadAllConnectionsSync(): List<ConnectionEntity>
 
     @Query("SELECT * FROM connections WHERE active = 1")
-    fun loadActiveConnection(): LiveData<ConnectionEntity>
+    fun loadActiveConnection(): LiveData<ConnectionEntity?>
 
     @Query("SELECT * FROM connections WHERE active = 1")
     fun loadActiveConnectionSync(): ConnectionEntity?
@@ -26,7 +26,7 @@ internal interface ConnectionDao {
     fun loadConnectionByIdSync(id: Int): ConnectionEntity?
 
     @Query("SELECT * FROM connections WHERE id = :id")
-    fun loadConnectionById(id: Int): LiveData<ConnectionEntity>
+    fun loadConnectionById(id: Int): LiveData<ConnectionEntity?>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insert(connection: ConnectionEntity): Long

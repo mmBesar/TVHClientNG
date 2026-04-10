@@ -78,7 +78,7 @@ class ConnectionDataSource(private val db: AppRoomDatabase) : DataSourceInterfac
 
     override fun getLiveDataItemById(id: Any): LiveData<Connection> {
         return db.connectionDao.loadConnectionById(id as Int).map { entity ->
-            entity.toConnection()
+            entity?.toConnection() ?: Connection()
         }
     }
 

@@ -39,7 +39,7 @@ class TimerRecordingDataSource(private val db: AppRoomDatabase) : DataSourceInte
 
     override fun getLiveDataItemById(id: Any): LiveData<TimerRecording> {
         return db.timerRecordingDao.loadRecordingById(id as String).map { entity ->
-            entity.toRecording()
+            entity?.toRecording() ?: TimerRecording()
         }
     }
 
