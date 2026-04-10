@@ -16,8 +16,8 @@ android {
     defaultConfig {
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 241
-        versionName "2.4.8-free"
+        versionCode 1
+        versionName "1.0.0"
 
         applicationId "org.tvheadend.tvhclientng"
         setProperty("archivesBaseName", "${applicationId}-${versionName}-${versionCode}")
