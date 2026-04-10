@@ -48,7 +48,6 @@ class SettingsFragment : PreferenceFragmentCompat(), Preference.OnPreferenceClic
         findPreference<Preference>("language")?.onPreferenceClickListener = this
         findPreference<Preference>("selected_theme")?.onPreferenceClickListener = this
         findPreference<Preference>("information")?.onPreferenceClickListener = this
-        findPreference<Preference>("privacy_policy")?.onPreferenceClickListener = this
         findPreference<Preference>("download_directory")?.onPreferenceClickListener = this
 
         // Hide the unlocker option since all features are free

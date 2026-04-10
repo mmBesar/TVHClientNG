@@ -17,7 +17,6 @@ import org.tvheadend.tvhclientng.ui.common.interfaces.ToolbarInterface
 import org.tvheadend.tvhclientng.ui.common.onAttach
 import org.tvheadend.tvhclientng.ui.features.information.ChangeLogFragment
 import org.tvheadend.tvhclientng.ui.features.information.InformationFragment
-import org.tvheadend.tvhclientng.ui.features.information.PrivacyPolicyFragment
 import org.tvheadend.tvhclientng.util.extensions.showSnackbarMessage
 import org.tvheadend.tvhclientng.util.getThemeId
 import timber.log.Timber
@@ -116,7 +115,6 @@ class SettingsActivity : AppCompatActivity(), RemoveFragmentFromBackstackInterfa
             "playback" -> SettingsPlaybackFragment()
             "advanced" -> SettingsAdvancedFragment()
             "information" -> InformationFragment()
-            "privacy_policy" -> PrivacyPolicyFragment()
             "changelog" -> ChangeLogFragment.newInstance(showFullChangelog = true)
             else -> SettingsFragment()
         }
