@@ -47,4 +47,37 @@
         app:layout_constraintEnd_toEndOf="@+id/status_background"
         app:layout_constraintStart_toStartOf="@+id/status_background"
         app:layout_constraintTop_toTopOf="@+id/status_background" />
+    <!-- Gesture feedback overlay for brightness and volume -->
+    <LinearLayout
+        android:id="@+id/gesture_overlay"
+        android:layout_width="80dp"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:background="#AA000000"
+        android:padding="12dp"
+        android:visibility="gone"
+        android:alpha="0.9"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <ImageView
+            android:id="@+id/gesture_icon"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:contentDescription="@null"
+            android:src="@drawable/ic_player_fullscreen" />
+
+        <TextView
+            android:id="@+id/gesture_value"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textColor="@android:color/white"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+    </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

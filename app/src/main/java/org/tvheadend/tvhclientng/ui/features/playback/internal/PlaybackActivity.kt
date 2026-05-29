@@ -40,6 +40,14 @@ import org.tvheadend.tvhclientng.util.extensions.*
 import org.tvheadend.tvhclientng.util.getIconUrl
 import org.tvheadend.tvhclientng.util.getThemeId
 import timber.log.Timber
+import android.media.AudioManager
+import android.view.GestureDetector
+import android.view.MotionEvent
+import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.TextView
+import androidx.core.view.GestureDetectorCompat
+import kotlin.math.abs
 
 class PlaybackActivity : AppCompatActivity() {
 
@@ -79,6 +87,16 @@ class PlaybackActivity : AppCompatActivity() {
     private var forceOrientation = false
     private var value0 = -10000f
     private var value1 = -10000f
+
+    // Gesture detection for brightness and volume control
+    private lateinit var gestureDetector: GestureDetectorCompat
+    private lateinit var audioManager: AudioManager
+    private lateinit var gestureOverlay: LinearLayout
+    private lateinit var gestureIcon: ImageView
+    private lateinit var gestureValue: TextView
+    private var maxVolume: Int = 0
+    private var gestureHideRunnable: Runnable? = null
+    private val gestureHideHandler = Handler(Looper.getMainLooper())
 
     override fun onCreate(savedInstanceState: Bundle?) {
         setTheme(getThemeId(this))
@@ -165,6 +183,39 @@ class PlaybackActivity : AppCompatActivity() {
         playerToggleFullscreen.setOnClickListener { onToggleFullscreenSelected() }
         playNextChannel.setOnClickListener { onPlayNextChannelButtonSelected() }
         playPreviousChannel.setOnClickListener { onPlayPreviousChannelButtonSelected() }
+
+        // Initialize gesture controls for brightness and volume
+        audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+        gestureOverlay = findViewById(R.id.gesture_overlay)
+        gestureIcon = findViewById(R.id.gesture_icon)
+        gestureValue = findViewById(R.id.gesture_value)
+
+        gestureDetector = GestureDetectorCompat(this, object : GestureDetector.SimpleOnGestureListener() {
+            override fun onScroll(
+                e1: MotionEvent?,
+                e2: MotionEvent,
+                distanceX: Float,
+                distanceY: Float
+            ): Boolean {
+                if (abs(distanceY) < abs(distanceX)) return false
+                val screenWidth = playerView.width
+                val x = e1?.x ?: 0f
+
+                if (x < screenWidth / 2) {
+                    adjustBrightness(distanceY)
+                } else {
+                    adjustVolume(distanceY)
+                }
+                return true
+            }
+        })
+
+        playerView.setOnTouchListener { v, event ->
+            gestureDetector.onTouchEvent(event)
+            v.performClick()
+            false
+        }
 
         Timber.d("Getting view model")
         viewModel = ViewModelProvider(this)[PlayerViewModel::class.java]
@@ -458,5 +509,49 @@ class PlaybackActivity : AppCompatActivity() {
             Intent(this, MainActivity::class.java)
                 .addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
         )
+    }
+
+    private fun adjustBrightness(distanceY: Float) {
+        val layoutParams = window.attributes
+        // Current brightness — use system brightness if -1
+        var brightness = if (layoutParams.screenBrightness < 0)
+            android.provider.Settings.System.getInt(
+                contentResolver,
+                android.provider.Settings.System.SCREEN_BRIGHTNESS, 128
+            ) / 255f
+        else layoutParams.screenBrightness
+
+        // Adjust — distanceY is negative when swiping up
+        brightness += distanceY / 1000f
+        brightness = brightness.coerceIn(0.01f, 1.0f)
+
+        layoutParams.screenBrightness = brightness
+        window.attributes = layoutParams
+
+        val percent = (brightness * 100).toInt()
+        showGestureOverlay("☀ $percent%")
+    }
+
+    private fun adjustVolume(distanceY: Float) {
+        val current = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
+        // distanceY is negative when swiping up — so subtract to increase volume
+        val delta = if (distanceY > 0) -1 else 1
+        val newVolume = (current + delta).coerceIn(0, maxVolume)
+        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, newVolume, 0)
+
+        val percent = (newVolume.toFloat() / maxVolume * 100).toInt()
+        showGestureOverlay("🔊 $percent%")
+    }
+
+    private fun showGestureOverlay(text: String) {
+        gestureValue.text = text
+        gestureOverlay.visibility = View.VISIBLE
+
+        // Hide after 1.5 seconds of inactivity
+        gestureHideRunnable?.let { gestureHideHandler.removeCallbacks(it) }
+        gestureHideRunnable = Runnable {
+            gestureOverlay.visibility = View.GONE
+        }
+        gestureHideHandler.postDelayed(gestureHideRunnable!!, 1500)
     }
 }
