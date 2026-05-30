@@ -20,6 +20,7 @@ import android.widget.FrameLayout
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
+import android.widget.ProgressBar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
 import androidx.media3.common.Player
@@ -95,6 +96,8 @@ class PlaybackActivity : AppCompatActivity() {
     private lateinit var gestureOverlayRight: LinearLayout
     private lateinit var gestureValueLeft: TextView
     private lateinit var gestureValueRight: TextView
+    private lateinit var gestureBarLeft: ProgressBar
+    private lateinit var gestureBarRight: ProgressBar
     private var maxVolume: Int = 0
     private var gestureHideRunnable: Runnable? = null
     private val gestureHideHandler = Handler(Looper.getMainLooper())
@@ -192,6 +195,8 @@ class PlaybackActivity : AppCompatActivity() {
         gestureOverlayRight = findViewById(R.id.gesture_overlay_right)
         gestureValueLeft = findViewById(R.id.gesture_value_left)
         gestureValueRight = findViewById(R.id.gesture_value_right)
+        gestureBarLeft = findViewById(R.id.gesture_bar_left)
+        gestureBarRight = findViewById(R.id.gesture_bar_right)
 
         gestureDetector = GestureDetectorCompat(this, object : GestureDetector.SimpleOnGestureListener() {
             override fun onScroll(
@@ -517,7 +522,6 @@ class PlaybackActivity : AppCompatActivity() {
 
     private fun adjustBrightness(distanceY: Float) {
         val layoutParams = window.attributes
-        // Current brightness — use system brightness if -1
         var brightness = if (layoutParams.screenBrightness < 0)
             android.provider.Settings.System.getInt(
                 contentResolver,
@@ -525,26 +529,26 @@ class PlaybackActivity : AppCompatActivity() {
             ) / 255f
         else layoutParams.screenBrightness
 
-        // Adjust — distanceY is negative when swiping up
-        brightness += distanceY / 1000f
+        brightness -= distanceY / (playerView.height * 0.8f)
         brightness = brightness.coerceIn(0.01f, 1.0f)
 
         layoutParams.screenBrightness = brightness
         window.attributes = layoutParams
 
         val percent = (brightness * 100).toInt()
-        showGestureOverlay(gestureOverlayLeft, gestureValueLeft, "☀\n$percent%")
+        gestureBarLeft.progress = percent
+        showGestureOverlay(gestureOverlayLeft, gestureValueLeft, "$percent%")
     }
 
     private fun adjustVolume(distanceY: Float) {
         val current = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
-        // distanceY is negative when swiping up — so subtract to increase volume
         val delta = if (distanceY > 0) 1 else -1
         val newVolume = (current + delta).coerceIn(0, maxVolume)
         audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, newVolume, 0)
 
         val percent = (newVolume.toFloat() / maxVolume * 100).toInt()
-        showGestureOverlay(gestureOverlayRight, gestureValueRight, "🔊\n$percent%")
+        gestureBarRight.progress = percent
+        showGestureOverlay(gestureOverlayRight, gestureValueRight, "$percent%")
     }
 
     private fun showGestureOverlay(overlay: LinearLayout, valueText: TextView, text: String) {
