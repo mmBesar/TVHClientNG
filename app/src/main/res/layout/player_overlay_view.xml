@@ -48,91 +48,57 @@
         app:layout_constraintStart_toStartOf="@+id/status_background"
         app:layout_constraintTop_toTopOf="@+id/status_background" />
     <!-- Gesture feedback overlay for brightness and volume -->
-    <!-- Left overlay: brightness indicator -->
+    <!-- Gesture OSD bar — shown at top during brightness/volume gestures -->
     <LinearLayout
-        android:id="@+id/gesture_overlay_left"
-        android:layout_width="36dp"
-        android:layout_height="180dp"
-        android:orientation="vertical"
-        android:gravity="center_horizontal"
+        android:id="@+id/gesture_osd_bar"
+        android:layout_width="0dp"
+        android:layout_height="48dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
         android:background="#CC000000"
-        android:padding="6dp"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
         android:visibility="gone"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        android:layout_marginStart="48dp">
+        app:layout_constraintEnd_toEndOf="parent">
 
-        <TextView
-            android:id="@+id/gesture_value_left"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textColor="@android:color/white"
-            android:textSize="10sp"
-            android:textStyle="bold"
-            android:gravity="center"
-            android:layout_marginBottom="4dp"/>
+        <!-- Icon -->
+        <ImageView
+            android:id="@+id/gesture_osd_icon"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@drawable/ic_brightness"
+            android:contentDescription="@null" />
 
-        <!-- Bar track (background) -->
+        <!-- Fill bar track -->
         <FrameLayout
-            android:layout_width="12dp"
-            android:layout_height="0dp"
+            android:layout_width="0dp"
+            android:layout_height="4dp"
             android:layout_weight="1"
+            android:layout_marginStart="12dp"
+            android:layout_marginEnd="12dp"
             android:background="#44FFFFFF">
 
-            <!-- Bar fill (foreground) — grows from bottom -->
+            <!-- Fill bar progress -->
             <View
-                android:id="@+id/gesture_bar_left"
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_gravity="bottom"
+                android:id="@+id/gesture_osd_bar_fill"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_gravity="start"
                 android:background="#FFFFFFFF" />
 
         </FrameLayout>
 
-    </LinearLayout>
-
-    <!-- Right overlay: volume indicator -->
-    <LinearLayout
-        android:id="@+id/gesture_overlay_right"
-        android:layout_width="36dp"
-        android:layout_height="180dp"
-        android:orientation="vertical"
-        android:gravity="center_horizontal"
-        android:background="#CC000000"
-        android:padding="6dp"
-        android:visibility="gone"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        android:layout_marginEnd="48dp">
-
+        <!-- Percentage -->
         <TextView
-            android:id="@+id/gesture_value_right"
-            android:layout_width="wrap_content"
+            android:id="@+id/gesture_osd_value"
+            android:layout_width="36dp"
             android:layout_height="wrap_content"
             android:textColor="@android:color/white"
-            android:textSize="10sp"
+            android:textSize="12sp"
             android:textStyle="bold"
-            android:gravity="center"
-            android:layout_marginBottom="4dp"/>
-
-        <!-- Bar track (background) -->
-        <FrameLayout
-            android:layout_width="12dp"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:background="#44FFFFFF">
-
-            <!-- Bar fill (foreground) — grows from bottom -->
-            <View
-                android:id="@+id/gesture_bar_right"
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_gravity="bottom"
-                android:background="#FFFFFFFF" />
-
-        </FrameLayout>
+            android:gravity="end" />
 
     </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

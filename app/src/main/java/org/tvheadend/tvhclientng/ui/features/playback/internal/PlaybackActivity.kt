@@ -88,18 +88,17 @@ class PlaybackActivity : AppCompatActivity() {
     private var value0 = -10000f
     private var value1 = -10000f
 
-    // Gesture detection for brightness and volume control
+    // Gesture OSD
     private lateinit var gestureDetector: GestureDetectorCompat
     private lateinit var audioManager: AudioManager
-    private lateinit var gestureOverlayLeft: LinearLayout
-    private lateinit var gestureOverlayRight: LinearLayout
-    private lateinit var gestureValueLeft: TextView
-    private lateinit var gestureValueRight: TextView
-    private lateinit var gestureBarLeft: View
-    private lateinit var gestureBarRight: View
     private var maxVolume: Int = 0
+    private lateinit var gestureOsdBar: LinearLayout
+    private lateinit var gestureOsdIcon: ImageView
+    private lateinit var gestureOsdBarFill: View
+    private lateinit var gestureOsdValue: TextView
     private var gestureHideRunnable: Runnable? = null
     private val gestureHideHandler = Handler(Looper.getMainLooper())
+    private var volumeAccumulator: Float = 0f
 
     override fun onCreate(savedInstanceState: Bundle?) {
         setTheme(getThemeId(this))
@@ -190,12 +189,10 @@ class PlaybackActivity : AppCompatActivity() {
         // Initialize gesture controls for brightness and volume
         audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
         maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
-        gestureOverlayLeft = findViewById(R.id.gesture_overlay_left)
-        gestureOverlayRight = findViewById(R.id.gesture_overlay_right)
-        gestureValueLeft = findViewById(R.id.gesture_value_left)
-        gestureValueRight = findViewById(R.id.gesture_value_right)
-        gestureBarLeft = findViewById(R.id.gesture_bar_left)
-        gestureBarRight = findViewById(R.id.gesture_bar_right)
+        gestureOsdBar = findViewById(R.id.gesture_osd_bar)
+        gestureOsdIcon = findViewById(R.id.gesture_osd_icon)
+        gestureOsdBarFill = findViewById(R.id.gesture_osd_bar_fill)
+        gestureOsdValue = findViewById(R.id.gesture_osd_value)
 
         gestureDetector = GestureDetectorCompat(this, object : GestureDetector.SimpleOnGestureListener() {
             override fun onScroll(
@@ -519,18 +516,6 @@ class PlaybackActivity : AppCompatActivity() {
         )
     }
 
-    private fun updateBar(bar: View, percent: Int) {
-        // Wait for parent to be laid out then set height proportionally
-        val parent = bar.parent as? android.view.ViewGroup ?: return
-        parent.post {
-            val totalHeight = parent.height
-            val newHeight = (totalHeight * percent / 100f).toInt()
-            val params = bar.layoutParams
-            params.height = newHeight
-            bar.layoutParams = params
-        }
-    }
-
     private fun adjustBrightness(distanceY: Float) {
         val layoutParams = window.attributes
         var brightness = if (layoutParams.screenBrightness < 0)
@@ -540,38 +525,47 @@ class PlaybackActivity : AppCompatActivity() {
             ) / 255f
         else layoutParams.screenBrightness
 
-        brightness -= distanceY / (playerView.height * 0.8f)
+        // distanceY positive = swipe down = decrease brightness
+        brightness -= distanceY / (playerView.height * 1.5f)
         brightness = brightness.coerceIn(0.01f, 1.0f)
 
         layoutParams.screenBrightness = brightness
         window.attributes = layoutParams
 
         val percent = (brightness * 100).toInt()
-        updateBar(gestureBarLeft, percent)
-        showGestureOverlay(gestureOverlayLeft, gestureValueLeft, "$percent%")
+        showGestureOsd(R.drawable.ic_brightness, percent)
     }
 
     private fun adjustVolume(distanceY: Float) {
+        volumeAccumulator += distanceY
+        val threshold = playerView.height / (maxVolume * 1.5f)
+        if (Math.abs(volumeAccumulator) < threshold) return
+
+        val delta = if (volumeAccumulator > 0) 1 else -1
+        volumeAccumulator = 0f
+
         val current = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
-        val delta = if (distanceY > 0) 1 else -1
         val newVolume = (current + delta).coerceIn(0, maxVolume)
         audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, newVolume, 0)
 
         val percent = (newVolume.toFloat() / maxVolume * 100).toInt()
-        updateBar(gestureBarRight, percent)
-        showGestureOverlay(gestureOverlayRight, gestureValueRight, "$percent%")
+        showGestureOsd(R.drawable.ic_volume, percent)
     }
 
-    private fun showGestureOverlay(overlay: LinearLayout, valueText: TextView, text: String) {
-        valueText.text = text
-        overlay.visibility = View.VISIBLE
+    private fun showGestureOsd(iconRes: Int, percent: Int) {
+        gestureOsdIcon.setImageResource(iconRes)
+        gestureOsdValue.text = "$percent%"
 
-        // Hide after 1.5 seconds of inactivity
-        gestureHideRunnable?.let { gestureHideHandler.removeCallbacks(it) }
-        gestureHideRunnable = Runnable {
-            gestureOverlayLeft.visibility = View.GONE
-            gestureOverlayRight.visibility = View.GONE
+        gestureOsdBarFill.post {
+            val parent = gestureOsdBarFill.parent as? android.view.ViewGroup ?: return@post
+            val params = gestureOsdBarFill.layoutParams
+            params.width = (parent.width * percent / 100f).toInt()
+            gestureOsdBarFill.layoutParams = params
         }
+
+        gestureOsdBar.visibility = View.VISIBLE
+        gestureHideRunnable?.let { gestureHideHandler.removeCallbacks(it) }
+        gestureHideRunnable = Runnable { gestureOsdBar.visibility = View.GONE }
         gestureHideHandler.postDelayed(gestureHideRunnable!!, 1500)
     }
 }
