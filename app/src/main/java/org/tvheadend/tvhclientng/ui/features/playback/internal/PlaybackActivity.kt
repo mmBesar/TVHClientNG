@@ -43,10 +43,10 @@ import timber.log.Timber
 import android.media.AudioManager
 import android.view.GestureDetector
 import android.view.MotionEvent
-import android.widget.ImageView
 import android.widget.LinearLayout
-import android.widget.TextView
 import androidx.core.view.GestureDetectorCompat
+import android.os.Handler
+import android.os.Looper
 import kotlin.math.abs
 
 class PlaybackActivity : AppCompatActivity() {
@@ -211,7 +211,7 @@ class PlaybackActivity : AppCompatActivity() {
             }
         })
 
-        playerView.setOnTouchListener { v, event ->
+        playerView.setOnTouchListener { v: View, event: MotionEvent ->
             gestureDetector.onTouchEvent(event)
             v.performClick()
             false
