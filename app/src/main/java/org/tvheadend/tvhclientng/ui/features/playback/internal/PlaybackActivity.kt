@@ -91,9 +91,10 @@ class PlaybackActivity : AppCompatActivity() {
     // Gesture detection for brightness and volume control
     private lateinit var gestureDetector: GestureDetectorCompat
     private lateinit var audioManager: AudioManager
-    private lateinit var gestureOverlay: LinearLayout
-    private lateinit var gestureIcon: ImageView
-    private lateinit var gestureValue: TextView
+    private lateinit var gestureOverlayLeft: LinearLayout
+    private lateinit var gestureOverlayRight: LinearLayout
+    private lateinit var gestureValueLeft: TextView
+    private lateinit var gestureValueRight: TextView
     private var maxVolume: Int = 0
     private var gestureHideRunnable: Runnable? = null
     private val gestureHideHandler = Handler(Looper.getMainLooper())
@@ -187,9 +188,10 @@ class PlaybackActivity : AppCompatActivity() {
         // Initialize gesture controls for brightness and volume
         audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
         maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
-        gestureOverlay = findViewById(R.id.gesture_overlay)
-        gestureIcon = findViewById(R.id.gesture_icon)
-        gestureValue = findViewById(R.id.gesture_value)
+        gestureOverlayLeft = findViewById(R.id.gesture_overlay_left)
+        gestureOverlayRight = findViewById(R.id.gesture_overlay_right)
+        gestureValueLeft = findViewById(R.id.gesture_value_left)
+        gestureValueRight = findViewById(R.id.gesture_value_right)
 
         gestureDetector = GestureDetectorCompat(this, object : GestureDetector.SimpleOnGestureListener() {
             override fun onScroll(
@@ -212,9 +214,11 @@ class PlaybackActivity : AppCompatActivity() {
         })
 
         playerView.setOnTouchListener { v: View, event: MotionEvent ->
-            gestureDetector.onTouchEvent(event)
-            v.performClick()
-            false
+            val consumed = gestureDetector.onTouchEvent(event)
+            if (!consumed) {
+                v.performClick()
+            }
+            consumed
         }
 
         Timber.d("Getting view model")
@@ -529,28 +533,29 @@ class PlaybackActivity : AppCompatActivity() {
         window.attributes = layoutParams
 
         val percent = (brightness * 100).toInt()
-        showGestureOverlay("☀ $percent%")
+        showGestureOverlay(gestureOverlayLeft, gestureValueLeft, "☀\n$percent%")
     }
 
     private fun adjustVolume(distanceY: Float) {
         val current = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
         // distanceY is negative when swiping up — so subtract to increase volume
-        val delta = if (distanceY > 0) -1 else 1
+        val delta = if (distanceY > 0) 1 else -1
         val newVolume = (current + delta).coerceIn(0, maxVolume)
         audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, newVolume, 0)
 
         val percent = (newVolume.toFloat() / maxVolume * 100).toInt()
-        showGestureOverlay("🔊 $percent%")
+        showGestureOverlay(gestureOverlayRight, gestureValueRight, "🔊\n$percent%")
     }
 
-    private fun showGestureOverlay(text: String) {
-        gestureValue.text = text
-        gestureOverlay.visibility = View.VISIBLE
+    private fun showGestureOverlay(overlay: LinearLayout, valueText: TextView, text: String) {
+        valueText.text = text
+        overlay.visibility = View.VISIBLE
 
         // Hide after 1.5 seconds of inactivity
         gestureHideRunnable?.let { gestureHideHandler.removeCallbacks(it) }
         gestureHideRunnable = Runnable {
-            gestureOverlay.visibility = View.GONE
+            gestureOverlayLeft.visibility = View.GONE
+            gestureOverlayRight.visibility = View.GONE
         }
         gestureHideHandler.postDelayed(gestureHideRunnable!!, 1500)
     }
