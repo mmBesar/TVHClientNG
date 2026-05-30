@@ -20,7 +20,6 @@ import android.widget.FrameLayout
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
-import android.widget.ProgressBar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
 import androidx.media3.common.Player
@@ -96,8 +95,8 @@ class PlaybackActivity : AppCompatActivity() {
     private lateinit var gestureOverlayRight: LinearLayout
     private lateinit var gestureValueLeft: TextView
     private lateinit var gestureValueRight: TextView
-    private lateinit var gestureBarLeft: ProgressBar
-    private lateinit var gestureBarRight: ProgressBar
+    private lateinit var gestureBarLeft: View
+    private lateinit var gestureBarRight: View
     private var maxVolume: Int = 0
     private var gestureHideRunnable: Runnable? = null
     private val gestureHideHandler = Handler(Looper.getMainLooper())
@@ -520,6 +519,18 @@ class PlaybackActivity : AppCompatActivity() {
         )
     }
 
+    private fun updateBar(bar: View, percent: Int) {
+        // Wait for parent to be laid out then set height proportionally
+        val parent = bar.parent as? android.view.ViewGroup ?: return
+        parent.post {
+            val totalHeight = parent.height
+            val newHeight = (totalHeight * percent / 100f).toInt()
+            val params = bar.layoutParams
+            params.height = newHeight
+            bar.layoutParams = params
+        }
+    }
+
     private fun adjustBrightness(distanceY: Float) {
         val layoutParams = window.attributes
         var brightness = if (layoutParams.screenBrightness < 0)
@@ -536,7 +547,7 @@ class PlaybackActivity : AppCompatActivity() {
         window.attributes = layoutParams
 
         val percent = (brightness * 100).toInt()
-        gestureBarLeft.progress = percent
+        updateBar(gestureBarLeft, percent)
         showGestureOverlay(gestureOverlayLeft, gestureValueLeft, "$percent%")
     }
 
@@ -547,7 +558,7 @@ class PlaybackActivity : AppCompatActivity() {
         audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, newVolume, 0)
 
         val percent = (newVolume.toFloat() / maxVolume * 100).toInt()
-        gestureBarRight.progress = percent
+        updateBar(gestureBarRight, percent)
         showGestureOverlay(gestureOverlayRight, gestureValueRight, "$percent%")
     }
 
