@@ -195,6 +195,16 @@ class PlaybackActivity : AppCompatActivity() {
         gestureOsdValue = findViewById(R.id.gesture_osd_value)
 
         gestureDetector = GestureDetectorCompat(this, object : GestureDetector.SimpleOnGestureListener() {
+            override fun onSingleTapUp(e: MotionEvent): Boolean {
+                // Toggle controls visibility on single tap
+                if (playerView.isControllerFullyVisible) {
+                    playerView.hideController()
+                } else {
+                    playerView.showController()
+                }
+                return true
+            }
+
             override fun onScroll(
                 e1: MotionEvent?,
                 e2: MotionEvent,
@@ -204,7 +214,6 @@ class PlaybackActivity : AppCompatActivity() {
                 if (abs(distanceY) < abs(distanceX)) return false
                 val screenWidth = playerView.width
                 val x = e1?.x ?: 0f
-
                 if (x < screenWidth / 2) {
                     adjustBrightness(distanceY)
                 } else {
@@ -215,17 +224,19 @@ class PlaybackActivity : AppCompatActivity() {
         })
 
         playerView.setOnTouchListener { v: View, event: MotionEvent ->
-            val consumed = gestureDetector.onTouchEvent(event)
-            if (!consumed) {
-                v.performClick()
-            }
-            consumed
+            gestureDetector.onTouchEvent(event)
+            v.performClick()
+            true
         }
 
         Timber.d("Getting view model")
         viewModel = ViewModelProvider(this)[PlayerViewModel::class.java]
         viewModel.player.setVideoSurfaceView(exoPlayerSurfaceView)
         playerView.player = viewModel.player
+        
+        // Controls auto-hide after 3 seconds, tap to toggle
+        playerView.controllerShowTimeoutMs = 3000
+        playerView.controllerHideOnTouch = false
 
         Timber.d("Observing authentication status")
         viewModel.isConnected.observe(this) { isConnected ->
@@ -526,7 +537,7 @@ class PlaybackActivity : AppCompatActivity() {
         else layoutParams.screenBrightness
 
         // distanceY positive = swipe down = decrease brightness
-        brightness -= distanceY / (playerView.height * 1.5f)
+        brightness += distanceY / (playerView.height * 1.5f)
         brightness = brightness.coerceIn(0.01f, 1.0f)
 
         layoutParams.screenBrightness = brightness
@@ -538,7 +549,7 @@ class PlaybackActivity : AppCompatActivity() {
 
     private fun adjustVolume(distanceY: Float) {
         volumeAccumulator += distanceY
-        val threshold = playerView.height / (maxVolume * 1.5f)
+        val threshold = playerView.height / 10f
         if (Math.abs(volumeAccumulator) < threshold) return
 
         val delta = if (volumeAccumulator > 0) 1 else -1
