@@ -181,16 +181,6 @@ class PlayerViewModel(application: Application) : BaseViewModel(application), Se
         val serverStatus = appRepository.serverStatusData.activeItem
         val serverProfile = appRepository.serverProfileData.getItemById(serverStatus.htspPlaybackServerProfileId)
         htspSubscriptionDataSourceFactory = HtspSubscriptionDataSource.Factory(context, htspConnection, serverProfile?.name)
-        dataSource = htspSubscriptionDataSourceFactory?.currentDataSource
-
-        // Set up signal status listener
-        (dataSource as? HtspSubscriptionDataSource)?.setSignalListener(
-            object : HtspSubscriptionDataSource.SignalListener {
-                override fun onSignalStatus(signalPercent: Int, snrPercent: Int, status: String) {
-                    signalStrength.postValue(Triple(signalPercent, snrPercent, status))
-                }
-            }
-        )
 
         val mediaSource = ProgressiveMediaSource.Factory(
             htspSubscriptionDataSourceFactory!!,
@@ -201,6 +191,16 @@ class PlayerViewModel(application: Application) : BaseViewModel(application), Se
         player.prepare()
         liveTvIsPlaying.value = true
         player.playWhenReady = true
+
+        // Set up signal status listener AFTER prepare() so dataSource exists
+        dataSource = htspSubscriptionDataSourceFactory?.currentDataSource
+        (dataSource as? HtspSubscriptionDataSource)?.setSignalListener(
+            object : HtspSubscriptionDataSource.SignalListener {
+                override fun onSignalStatus(signalPercent: Int, snrPercent: Int, status: String) {
+                    signalStrength.postValue(Triple(signalPercent, snrPercent, status))
+                }
+            }
+        )
     }
 
     private fun loadMediaSourceForRecording(recordingId: Int) {

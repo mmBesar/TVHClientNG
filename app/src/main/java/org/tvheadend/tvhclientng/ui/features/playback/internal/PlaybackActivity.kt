@@ -228,7 +228,7 @@ class PlaybackActivity : AppCompatActivity() {
         playerView.setOnTouchListener { v: View, event: MotionEvent ->
             gestureDetector.onTouchEvent(event)
             v.performClick()
-            true
+            false
         }
 
         Timber.d("Getting view model")
