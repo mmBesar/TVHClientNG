@@ -92,6 +92,7 @@ class HtspFileInputStreamDataSource private constructor(val connection: HtspConn
     override fun setSpeed(tvhSpeed: Int) {}
     override fun resume() {}
     override fun pause() {}
+    override fun setSignalListener(listener: HtspSubscriptionDataSource.SignalListener?) {}
 
     override fun addTransferListener(transferListener: TransferListener) {}
 
