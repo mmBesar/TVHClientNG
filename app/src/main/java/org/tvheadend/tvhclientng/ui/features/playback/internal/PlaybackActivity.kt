@@ -51,6 +51,7 @@ import kotlin.math.abs
 
 class PlaybackActivity : AppCompatActivity() {
 
+    private lateinit var signalStrengthText: TextView
     private lateinit var playerStatus: TextView
     private lateinit var playerView: PlayerView
     private lateinit var exoPlayerFrame: FrameLayout
@@ -127,6 +128,7 @@ class PlaybackActivity : AppCompatActivity() {
         playerToggleFullscreen = findViewById<View>(R.id.player_toggle_fullscreen) as ImageButton
         playerInformation = findViewById<View>(R.id.player_information) as ImageButton
         playerSettings = findViewById<View>(R.id.player_settings) as ImageButton
+        signalStrengthText = playerView.findViewById(R.id.signal_strength)
 
         timeshiftSupported = PreferenceManager.getDefaultSharedPreferences(this)
             .getBoolean("timeshift_enabled", resources.getBoolean(R.bool.pref_default_timeshift_enabled))
@@ -333,6 +335,20 @@ class PlaybackActivity : AppCompatActivity() {
         }
         viewModel.elapsedTime.observe(this) { time -> elapsedTime.text = time }
         viewModel.remainingTime.observe(this) { time -> remainingTime.text = time }
+
+        viewModel.signalStrength.observe(this) { (signal, snr, status) ->
+            if (signal >= 0) {
+                val text = buildString {
+                    append("📡 $signal%")
+                    if (snr >= 0) append(" SNR:$snr%")
+                    if (status.isNotEmpty()) append(" $status")
+                }
+                signalStrengthText.text = text
+                signalStrengthText.visible()
+            } else {
+                signalStrengthText.gone()
+            }
+        }
     }
 
     override fun attachBaseContext(context: Context) {

@@ -15,4 +15,6 @@ interface HtspDataSourceInterface {
     fun pause()
 
     fun getResponseHeaders(): Map<String, List<String>>?
+
+    fun setSignalListener(listener: HtspSubscriptionDataSource.SignalListener?)
 }

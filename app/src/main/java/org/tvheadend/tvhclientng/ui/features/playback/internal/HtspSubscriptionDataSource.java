@@ -53,6 +53,17 @@ import timber.log.Timber;
 
 public class HtspSubscriptionDataSource implements DataSource, Closeable, ServerMessageListener<HtspMessage>, HtspDataSourceInterface {
 
+    // Listener interface for signal status updates
+    public interface SignalListener {
+        void onSignalStatus(int signalPercent, int snrPercent, String status);
+    }
+
+    private SignalListener signalListener;
+
+    public void setSignalListener(SignalListener listener) {
+        this.signalListener = listener;
+    }
+
     private static final AtomicInteger dataSourceCount = new AtomicInteger();
     private static final AtomicInteger subscriptionCount = new AtomicInteger();
 
@@ -267,8 +278,18 @@ public class HtspSubscriptionDataSource implements DataSource, Closeable, Server
             case "subscriptionSkip":
             case "subscriptionSpeed":
             case "queueStatus":
-            case "signalStatus":
             case "timeshiftStatus":
+                break;
+            case "signalStatus":
+                if (signalListener != null) {
+                    // feSignal is 0-65535, convert to 0-100%
+                    int signal = message.getInteger("feSignal", -1);
+                    int snr = message.getInteger("feSNR", -1);
+                    String status = message.getString("feStatus", "");
+                    int signalPercent = signal >= 0 ? (int)(signal / 655.35f) : -1;
+                    int snrPercent = snr >= 0 ? (int)(snr / 655.35f) : -1;
+                    signalListener.onSignalStatus(signalPercent, snrPercent, status);
+                }
                 break;
         }
     }

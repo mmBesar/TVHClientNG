@@ -63,6 +63,7 @@ class PlayerViewModel(application: Application) : BaseViewModel(application), Se
     var nextTitle: MutableLiveData<String> = MutableLiveData()
     var elapsedTime: MutableLiveData<String> = MutableLiveData()
     var remainingTime: MutableLiveData<String> = MutableLiveData()
+    var signalStrength: MutableLiveData<Triple<Int, Int, String>> = MutableLiveData()
 
     private lateinit var playbackInformation: PlaybackInformation
     private lateinit var timeUpdateRunnable: Runnable
@@ -181,6 +182,15 @@ class PlayerViewModel(application: Application) : BaseViewModel(application), Se
         val serverProfile = appRepository.serverProfileData.getItemById(serverStatus.htspPlaybackServerProfileId)
         htspSubscriptionDataSourceFactory = HtspSubscriptionDataSource.Factory(context, htspConnection, serverProfile?.name)
         dataSource = htspSubscriptionDataSourceFactory?.currentDataSource
+
+        // Set up signal status listener
+        (dataSource as? HtspSubscriptionDataSource)?.setSignalListener(
+            object : HtspSubscriptionDataSource.SignalListener {
+                override fun onSignalStatus(signalPercent: Int, snrPercent: Int, status: String) {
+                    signalStrength.postValue(Triple(signalPercent, snrPercent, status))
+                }
+            }
+        )
 
         val mediaSource = ProgressiveMediaSource.Factory(
             htspSubscriptionDataSourceFactory!!,
