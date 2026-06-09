@@ -37,6 +37,14 @@ import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import kotlin.math.max
 
+data class SignalInfo(
+    val signal: Int,
+    val snr: Int,
+    val ber: Int,
+    val unc: Int,
+    val status: String
+)
+
 class PlayerViewModel(application: Application) : BaseViewModel(application), ServerConnectionStateListener, Player.Listener {
 
     private var channelId: Int = 0
@@ -63,7 +71,7 @@ class PlayerViewModel(application: Application) : BaseViewModel(application), Se
     var nextTitle: MutableLiveData<String> = MutableLiveData()
     var elapsedTime: MutableLiveData<String> = MutableLiveData()
     var remainingTime: MutableLiveData<String> = MutableLiveData()
-    var signalStrength: MutableLiveData<Triple<Int, Int, String>> = MutableLiveData()
+    var signalStrength: MutableLiveData<SignalInfo> = MutableLiveData()
 
     private lateinit var playbackInformation: PlaybackInformation
     private lateinit var timeUpdateRunnable: Runnable
@@ -196,8 +204,8 @@ class PlayerViewModel(application: Application) : BaseViewModel(application), Se
         dataSource = htspSubscriptionDataSourceFactory?.currentDataSource
         (dataSource as? HtspSubscriptionDataSource)?.setSignalListener(
             object : HtspSubscriptionDataSource.SignalListener {
-                override fun onSignalStatus(signalPercent: Int, snrPercent: Int, status: String) {
-                    signalStrength.postValue(Triple(signalPercent, snrPercent, status))
+                override fun onSignalStatus(signalPercent: Int, snrPercent: Int, ber: Int, unc: Int, status: String) {
+                    signalStrength.postValue(SignalInfo(signalPercent, snrPercent, ber, unc, status))
                 }
             }
         )

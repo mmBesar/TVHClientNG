@@ -236,8 +236,8 @@ class PlaybackActivity : AppCompatActivity() {
         viewModel.player.setVideoSurfaceView(exoPlayerSurfaceView)
         playerView.player = viewModel.player
         
-        // Controls auto-hide after 3 seconds, tap to toggle
-        playerView.controllerShowTimeoutMs = 3000
+        // No auto-hide — toggle on tap only
+        playerView.controllerShowTimeoutMs = 0
         playerView.controllerHideOnTouch = false
 
         Timber.d("Observing authentication status")
@@ -336,12 +336,14 @@ class PlaybackActivity : AppCompatActivity() {
         viewModel.elapsedTime.observe(this) { time -> elapsedTime.text = time }
         viewModel.remainingTime.observe(this) { time -> remainingTime.text = time }
 
-        viewModel.signalStrength.observe(this) { (signal, snr, status) ->
-            if (signal >= 0) {
+        viewModel.signalStrength.observe(this) { info ->
+            if (info.signal >= 0) {
                 val text = buildString {
-                    append("📡 $signal%")
-                    if (snr >= 0) append(" SNR:$snr%")
-                    if (status.isNotEmpty()) append(" $status")
+                    append("📡 ${info.signal}%")
+                    if (info.snr >= 0) append("  SNR ${info.snr}%")
+                    if (info.ber >= 0) append("  BER ${info.ber}%")
+                    if (info.unc >= 0) append("  UNC ${info.unc}")
+                    if (info.status.isNotEmpty()) append("  ${info.status}")
                 }
                 signalStrengthText.text = text
                 signalStrengthText.visible()

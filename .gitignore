@@ -4,6 +4,9 @@ keystore.properties
 tvhclient.properties
 local.properties
 
+# AI agent memory
+AGENTS.md
+
 /app/google-services.json
 /app/schemas/
 

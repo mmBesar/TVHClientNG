@@ -55,7 +55,7 @@ public class HtspSubscriptionDataSource implements DataSource, Closeable, Server
 
     // Listener interface for signal status updates
     public interface SignalListener {
-        void onSignalStatus(int signalPercent, int snrPercent, String status);
+        void onSignalStatus(int signalPercent, int snrPercent, int ber, int unc, String status);
     }
 
     private SignalListener signalListener;
@@ -282,13 +282,17 @@ public class HtspSubscriptionDataSource implements DataSource, Closeable, Server
                 break;
             case "signalStatus":
                 if (signalListener != null) {
-                    // feSignal is 0-65535, convert to 0-100%
+                    // feSignal and feSNR are 0-65535, convert to 0-100%
                     int signal = message.getInteger("feSignal", -1);
                     int snr = message.getInteger("feSNR", -1);
+                    int ber = message.getInteger("feBER", -1);
+                    int unc = message.getInteger("feUNC", -1);
                     String status = message.getString("feStatus", "");
                     int signalPercent = signal >= 0 ? (int)(signal / 655.35f) : -1;
                     int snrPercent = snr >= 0 ? (int)(snr / 655.35f) : -1;
-                    signalListener.onSignalStatus(signalPercent, snrPercent, status);
+                    int berPercent = ber >= 0 ? (int)(ber / 655.35f) : -1;
+                    int uncValue = unc; // UNC is a count, not a percentage
+                    signalListener.onSignalStatus(signalPercent, snrPercent, berPercent, uncValue, status);
                 }
                 break;
         }
