@@ -144,10 +144,12 @@
         android:maxLines="1"
         android:textColor="#FFBEBEBE"
         android:textSize="13sp"
+        app:layout_constraintBottom_toTopOf="@+id/player_rewind"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.0"
         tools:text="@string/title" />
 
     <TextView
@@ -171,6 +173,7 @@
         android:textColor="#FFBEBEBE"
         android:textSize="10sp"
         android:visibility="gone"
+        app:layout_constraintBottom_toTopOf="@+id/player_rewind"
         app:layout_constraintEnd_toEndOf="@+id/program_title"
         app:layout_constraintStart_toStartOf="@+id/program_title"
         app:layout_constraintTop_toBottomOf="@+id/program_subtitle"

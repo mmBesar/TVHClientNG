@@ -19,16 +19,16 @@ package org.tvheadend.tvhclientng.ui.features.playback.internal.reader
 class StreamReadersFactory {
 
     fun createStreamReader(streamType: String): StreamReader? {
-        when (streamType) {
+        when (streamType.uppercase()) {
             // Video Stream Types
             "H264" -> return H264StreamReader()
-            "HEVC" -> return H265StreamReader()
+            "HEVC", "H265" -> return H265StreamReader()
             "MPEG2VIDEO" -> return Mpeg2VideoStreamReader()
             // Audio Stream Types
-            "AAC" -> return AacStreamReader()
+            "AAC", "MP4A" -> return AacStreamReader()
             "AC3" -> return Ac3StreamReader()
             "EAC3" -> return Eac3StreamReader()
-            "MPEG2AUDIO" -> return Mpeg2AudioStreamReader()
+            "MPEG2AUDIO", "MP2A" -> return Mpeg2AudioStreamReader()
             "VORBIS" -> return VorbisStreamReader()
             // Text Stream Types
             "TEXTSUB" -> return TextsubStreamReader()
