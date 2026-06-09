@@ -58,7 +58,6 @@ class PlaybackActivity : AppCompatActivity() {
     private lateinit var exoPlayerSurfaceView: SurfaceView
     private lateinit var remainingTime: TextView
     private lateinit var elapsedTime: TextView
-    private lateinit var nextProgramTitle: TextView
     private lateinit var programSubtitle: TextView
     private lateinit var programTitle: TextView
     private lateinit var channelName: TextView
@@ -115,7 +114,6 @@ class PlaybackActivity : AppCompatActivity() {
         channelName = findViewById<View>(R.id.channel_name) as TextView
         programTitle = findViewById<View>(R.id.program_title) as TextView
         programSubtitle = findViewById<View>(R.id.program_subtitle) as TextView
-        nextProgramTitle = findViewById<View>(R.id.next_program_title) as TextView
         elapsedTime = findViewById<View>(R.id.elapsed_time) as TextView
         remainingTime = findViewById<View>(R.id.remaining_time) as TextView
         playerRewind = findViewById<View>(R.id.player_rewind) as ImageButton
@@ -328,10 +326,6 @@ class PlaybackActivity : AppCompatActivity() {
         viewModel.subtitle.observe(this) { subtitle ->
             setOptionalDescriptionText(programSubtitle, subtitle)
             programSubtitle.visibleOrGone(subtitle.isNotEmpty())
-        }
-        viewModel.nextTitle.observe(this) { nextTitle ->
-            setOptionalDescriptionText(nextProgramTitle, nextTitle)
-            nextProgramTitle.visibleOrGone(nextTitle.isNotEmpty())
         }
         viewModel.elapsedTime.observe(this) { time -> elapsedTime.text = time }
         viewModel.remainingTime.observe(this) { time -> remainingTime.text = time }
