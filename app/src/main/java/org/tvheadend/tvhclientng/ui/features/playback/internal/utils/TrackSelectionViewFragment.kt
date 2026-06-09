@@ -38,7 +38,7 @@ class TrackSelectionViewFragment : Fragment() {
         this.isDisabled = initialIsDisabled
         if (initialOverride != null) {
             selectedTrackGroup = initialOverride.groupIndex
-            selectedTrackIndex = initialOverride.trackIndex
+            selectedTrackIndex = if (initialOverride.length > 0) initialOverride.tracks[0] else -1
             this.overrides = listOf(initialOverride)
         }
     }
