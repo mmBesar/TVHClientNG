@@ -53,6 +53,7 @@ class PlaybackActivity : AppCompatActivity() {
 
     private lateinit var signalStrengthText: TextView
     private lateinit var playerStatus: TextView
+    private var controllerVisible = false
     private lateinit var playerView: PlayerView
     private lateinit var exoPlayerFrame: FrameLayout
     private lateinit var exoPlayerSurfaceView: SurfaceView
@@ -196,11 +197,11 @@ class PlaybackActivity : AppCompatActivity() {
 
         gestureDetector = GestureDetectorCompat(this, object : GestureDetector.SimpleOnGestureListener() {
             override fun onSingleTapUp(e: MotionEvent): Boolean {
-                // Toggle controls visibility on single tap
-                if (playerView.isControllerFullyVisible) {
-                    playerView.hideController()
-                } else {
+                controllerVisible = !controllerVisible
+                if (controllerVisible) {
                     playerView.showController()
+                } else {
+                    playerView.hideController()
                 }
                 return true
             }
@@ -226,7 +227,7 @@ class PlaybackActivity : AppCompatActivity() {
         playerView.setOnTouchListener { v: View, event: MotionEvent ->
             gestureDetector.onTouchEvent(event)
             v.performClick()
-            false
+            true
         }
 
         Timber.d("Getting view model")
